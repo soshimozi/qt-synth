@@ -1,0 +1,10 @@
+^D:\SYNTHESIZER-WITH-QT\BUILD\CMAKEFILES\57D5FD6EE869CCD7936FD0FFA3B9B9A0\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/synthesizer-with-qt -BD:/synthesizer-with-qt/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file D:/synthesizer-with-qt/build/synthesizer.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
