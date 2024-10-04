@@ -1,4 +1,0 @@
-D:/synthesizer-with-qt/build/CMakeFiles/synthesizer.dir
-D:/synthesizer-with-qt/build/CMakeFiles/INSTALL.dir
-D:/synthesizer-with-qt/build/CMakeFiles/ALL_BUILD.dir
-D:/synthesizer-with-qt/build/CMakeFiles/ZERO_CHECK.dir
