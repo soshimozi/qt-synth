@@ -35,10 +35,10 @@ set(PROJECT_SOURCES
     src/pianokey.cpp src/pianokey.h
     src/spritesheet.cpp src/spritesheet.h
     src/tooltip.cpp src/tooltip.h
+    src/voice.cpp src/voice.h
 )
 
 set(PROJECT_RESOURCES
-    images/LittlePhatty.png
     resources/resources.qrc
 )
 
