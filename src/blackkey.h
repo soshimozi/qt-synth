@@ -9,7 +9,7 @@ public:
     BlackKey(const QString& style, QWidget* parent = nullptr)
         : QPushButton(parent) {
         setStyleSheet(style);
-        setFixedSize(40, 150); // Size for black keys
+        setFixedSize(40, 125); // Size for black keys
     }
 };
 
