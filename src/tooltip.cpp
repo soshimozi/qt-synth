@@ -11,11 +11,17 @@ ToolTip::ToolTip(QWidget *parent)
 
 
     // Tooltip style
-    setStyleSheet("background-color: rgba(50, 50, 50, 255); border: 1px solid black; border-radius: 8px");
+    setStyleSheet("background-color: rgba(185, 185, 185, 255); border: 1px solid black; border-radius: 8px");
 
     m_label = new QLabel(this);
     m_label->setAlignment(Qt::AlignCenter);
-    m_label->setStyleSheet("color: white; padding: 8px;");
+    m_label->setStyleSheet("color: black; padding: 8px; font-family: 'Afacad Flux'");
+
+
+    // QFont font("Afacad Flux");
+    // font.setBold(true);
+    // label->setFont(font);
+
 
     auto layout = new QVBoxLayout(this);
     layout->addWidget(m_label);

@@ -9,7 +9,9 @@ public:
     PianoKey(const QString& style, QWidget* parent = nullptr)
         : QPushButton(parent) {
         setStyleSheet(style);
-        setFixedSize(60, 250); // Size for white keys
+
+        setFixedSize(60, 208); // Size for white keys
+        setFocusPolicy(Qt::StrongFocus);
     }
 };
 

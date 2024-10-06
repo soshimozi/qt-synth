@@ -10,23 +10,33 @@ class Voice {
 public:
     Voice(int noteIndex, float velocity);
 
-    void updateOsc1Frequency(float frequency, float detune);
-    void updateOsc2Frequency(float frequency, float detune);
-    void updateModOscFrequency(float frequency);
+    void setOsc1Frequency(float frequency);
+    void setOsc2Frequency(float frequency);
+    void setModOscFrequency(float frequency);
 
-    void updateOscillatorMix(float oscillator1Gain, float oscillator2Gain);
-    void updateModMix(float oscillator1Gain, float oscillator2Gain);
+    void setOsc1Detune(float detune);
+    void setOsc2Detune(float detune);
 
-    void updateFilterCutoff(float frequency);
+    void setOsc1Waveform(int waveform);
+    void setOsc2Waveform(int waveform);
+    void setModOscWaveform(int waveform);
 
+    void setOscillatorMix(float oscillator1Gain, float oscillator2Gain);
+    void setModMix(float oscillator1Gain, float oscillator2Gain);
+
+    void setFilterCutoff(float frequency);
+    void setFilterDetune(float detune);
+    void setFilterEnvelopeGain(float mix);
+    void setFilterModGain(float mix);
 
 protected:
-    virtual void buildAudioChain();
+    void buildAudioChain();
+
 private:
 
-    std::shared_ptr<OscillatorNode> m_osc1 = nullptr;
-    std::shared_ptr<OscillatorNode> m_osc2 = nullptr;
-    std::shared_ptr<OscillatorNode> m_modOsc = nullptr;
+    std::shared_ptr<OscillatorNode> m_oscillator1 = nullptr;
+    std::shared_ptr<OscillatorNode> m_oscillator2 = nullptr;
+    std::shared_ptr<OscillatorNode> m_oscillatorMod = nullptr;
 
     // instead of separate gains we will just use a mixer
     // and control the indvidual gains of the mixer channels

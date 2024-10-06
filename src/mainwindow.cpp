@@ -13,10 +13,36 @@
 
 static int last_processing_id = 0;
 
-KnobControl * MainWindow::createKnob(QVBoxLayout ** layout, double minimum, double maximum, double initialValue, QString labelText) {
+template <typename T>
+void connectKnobToMember(KnobControl* knob, T& memberVar, QObject* parent, std::function<void()> onUpdate = nullptr) {
+    QObject::connect(knob, &KnobControl::knobChanged, parent, [&memberVar, onUpdate](double oldValue, double newValue) {
+        memberVar = newValue;  // Update the member variable
+
+        if (onUpdate) {
+            onUpdate();  // Call optional onUpdate function if provided
+        }
+    });
+}
+
+int calculateNoteIndex(int keyboardOctaveIndex, int noteIndex) {
+    auto octaveIndex = (7 - keyboardOctaveIndex) + 1;
+    auto activeIndex = noteIndex + (octaveIndex * 12);
+
+    return activeIndex;
+}
+
+KnobControl * MainWindow::createKnob(QVBoxLayout ** layout,
+                                    double minimum,
+                                    double maximum,
+                                    double initialValue,
+                                    QString labelText,
+                                    int decimalPlaces,
+                                    bool log,
+                                    bool useFormatter,
+                                    QString suffixText) {
 
     KnobControl *knob = new KnobControl;
-    QLabel *lblTitle = createLabel(labelText, true);
+    QLabel *lblTitle = createLabel(labelText, true, 12);
 
     QVBoxLayout *vbox = new QVBoxLayout;
     vbox->setSizeConstraint(QLayout::SetFixedSize);
@@ -36,6 +62,20 @@ KnobControl * MainWindow::createKnob(QVBoxLayout ** layout, double minimum, doub
     vbox->addWidget(lblTitle, 0, Qt::AlignHCenter);
 
     *layout = vbox;
+
+
+    connect(knob, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
+        showKnobTooltip(knob, decimalPlaces, log, useFormatter, suffixText);
+    });
+
+    connect(knob, &KnobControl::hoverEntered, this, [=]() {
+        showKnobTooltip(knob, decimalPlaces, log, useFormatter, suffixText);
+    });
+
+    connect(knob, &KnobControl::hoverLeft, this, [=]() {
+        m_tooltip.hide();
+    });
+
     return knob;
 }
 
@@ -46,7 +86,7 @@ QLabel * MainWindow::createLabel(QString text, bool bold, int pointSize) {
     pal.setColor(QPalette::WindowText, Qt::white);
     label->setPalette(pal);
 
-    QFont font("Syncopate", pointSize);
+    QFont font("Afacad Flux", pointSize);
     label->setFont(font);
 
     if (bold) {
@@ -61,7 +101,7 @@ QLabel * MainWindow::createLabel(QString text, bool bold, int pointSize) {
 QGroupBox * MainWindow::createGroupBox(QString title, int pointSize) {
     QGroupBox *gb = new QGroupBox(title);
 
-    QFont font = QFont("Syncopate", pointSize, 700);
+    QFont font = QFont("Afacad Flux", pointSize, 700);
     gb->setFont(font);
 
     gb->setStyleSheet(tr("QGroupBox { color: white;  }"));
@@ -73,7 +113,7 @@ QComboBox * MainWindow::createComboBox(QStringList items) {
 
     cbo->addItems(items);
 
-    QFont font("Syncopate", 10);
+    QFont font("Afacad Flux", 10);
     cbo->setFont(font);
 
     return cbo;
@@ -83,7 +123,7 @@ QVBoxLayout *MainWindow::createModLayout() {
     QVBoxLayout *vbModGroup = new QVBoxLayout;
 
     QVBoxLayout * waveformVerticalLayout = new QVBoxLayout;
-    QLabel *waveformLabel = createLabel(tr("SHAPE"), true);
+    QLabel *waveformLabel = createLabel(tr("SHAPE"), true, 11);
 
     waveformVerticalLayout->setSpacing(0);
 
@@ -98,90 +138,44 @@ QVBoxLayout *MainWindow::createModLayout() {
 
     waveformVerticalLayout->addWidget(waveformLabel);
     waveformVerticalLayout->addWidget(waveformCombo);
-
     waveformLabel->setContentsMargins(0, 0, 0, 0);
     waveformCombo->setContentsMargins(0, 0, 0, 0);
-
     waveformVerticalLayout->setAlignment(Qt::AlignVCenter);
 
     vbModGroup->addLayout(waveformVerticalLayout);
 
     QVBoxLayout* frequencyKnobLayout;
-
-    auto modFrequencyKnob = createKnob(&frequencyKnobLayout, 0, 10, m_modFrequency, tr("FREQ"));
-
-    QObject::connect(modFrequencyKnob, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-
-        auto tooltipPoint = modFrequencyKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 1)), tooltipPoint, 25000);
-
-        m_modFrequency = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(modFrequencyKnob, &KnobControl::hoverEntered, this, [=]() {
-        auto value = modFrequencyKnob->value();
-
-        auto tooltipPoint = modFrequencyKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 1)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(modFrequencyKnob, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
+    auto modFrequencyKnob = createKnob(&frequencyKnobLayout, 0, 10, m_modFrequency, tr("FREQ"), 1);
+    connectKnobToMember(modFrequencyKnob, m_modFrequency, this, std::bind(&MainWindow::updateVoices, this));
     vbModGroup->addLayout(frequencyKnobLayout);
 
     QVBoxLayout *modMixLayout;
     auto modMixKnob = createKnob(&modMixLayout, 0, 100, m_osc1ModMix, tr("OSC1 TREMOLO"));
+    connectKnobToMember(modMixKnob, m_osc1ModMix, this, std::bind(&MainWindow::updateVoices, this));
     vbModGroup->addLayout(modMixLayout);
-
-    QObject::connect(modMixKnob, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-
-        auto tooltipPoint = modMixKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_osc1ModMix = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(modMixKnob, &KnobControl::hoverEntered, this, [=]() {
-        auto value = modMixKnob->value();
-
-        auto tooltipPoint = modMixKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(modMixKnob, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
 
 
     QVBoxLayout *modMix2Layout;
     auto modMix2Knob = createKnob(&modMix2Layout, 0, 100, m_osc2ModMix, tr("OSC2 TREMOLO"));
+    connectKnobToMember(modMix2Knob, m_osc2ModMix, this, std::bind(&MainWindow::updateVoices, this));
     vbModGroup->addLayout(modMix2Layout);
 
-    QObject::connect(modMix2Knob, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-
-        auto tooltipPoint = modMix2Knob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_osc2ModMix = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(modMix2Knob, &KnobControl::hoverEntered, this, [=]() {
-        auto value = modMix2Knob->value();
-
-        auto tooltipPoint = modMix2Knob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(modMix2Knob, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
     return vbModGroup;
+}
+
+void MainWindow::showKnobTooltip(const KnobControl* knob, int decimalPlaces, bool logarithmic, bool useFormatter, QString suffix) {
+
+    auto value = logarithmic ? std::pow(2, knob->value()) : knob->value();
+    auto tooltipText = QString("%1 %2").arg((useFormatter ? formatNumberPrefix(value) : QString::number(value, 'f', decimalPlaces)), suffix);
+    auto tooltipPoint = knob->centerPoint() + QPoint(-5, -20);
+
+    m_tooltip.showTooltip(tooltipText, tooltipPoint, 55000);
+
+}
+
+void MainWindow::showTooltip(const QPoint &point, QString toolTipText)
+{
+    m_tooltip.showTooltip(toolTipText, point, 25000);
 }
 
 QVBoxLayout* MainWindow::createOsc1Layout() {
@@ -191,9 +185,9 @@ QVBoxLayout* MainWindow::createOsc1Layout() {
     vbOsc1Group->addLayout(osc1Grid);
 
     QVBoxLayout * waveformVerticalLayout = new QVBoxLayout;
-    QLabel *osc1WaveformLabel = createLabel(tr("WAVEFORM"), true);
+    QLabel *osc1WaveformLabel = createLabel(tr("WAVEFORM"), true, 11);
 
-    auto waveformCombo = createComboBox({"Sine", "Square", "Saw", "Triange"});
+    auto waveformCombo = createComboBox({"Sine", "Square", "Saw", "Triangle"});
     waveformCombo->setCurrentIndex(m_osc1WaveformIndex);
 
     connect(waveformCombo, &QComboBox::currentIndexChanged, this, [=](int index){
@@ -211,33 +205,15 @@ QVBoxLayout* MainWindow::createOsc1Layout() {
 
     QVBoxLayout * detuneKnobLayout;
     auto detuneKnob = createKnob(&detuneKnobLayout, -1200, 1200, m_osc1Detune, "DETUNE");
+    connectKnobToMember(detuneKnob, m_osc1Detune, this, std::bind(&MainWindow::updateVoices, this));
     osc1Grid->addLayout(detuneKnobLayout, 1, 0, Qt::AlignHCenter | Qt::AlignTop);
-
-    QObject::connect(detuneKnob, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = detuneKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_osc1Detune = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(detuneKnob, &KnobControl::hoverEntered, this, [=]() {
-        auto value = detuneKnob->value();
-
-        auto tooltipPoint = detuneKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(detuneKnob, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
 
 
     // // /////////////////////////////////////////////////
     // // /
 
     waveformVerticalLayout = new QVBoxLayout;
-    QLabel *osc1IntervalLabel = createLabel(tr("INTERVAL"), true);
+    QLabel *osc1IntervalLabel = createLabel(tr("INTERVAL"), true, 11);
 
     auto intervalCombo = createComboBox({"32'", "16'", "8'"});
     intervalCombo->setCurrentIndex(m_osc1IntervalIndex);
@@ -256,28 +232,9 @@ QVBoxLayout* MainWindow::createOsc1Layout() {
     osc1Grid->addLayout(waveformVerticalLayout, 0, 1, Qt::AlignHCenter | Qt::AlignTop);
 
     QVBoxLayout * mixKnobLayout;
-    auto mixKnob = createKnob(&mixKnobLayout, 0, 100, m_osc1Mix, "Mix");
+    auto mixKnob = createKnob(&mixKnobLayout, 0, 100, m_osc1Mix, "MIX");
+    connectKnobToMember(mixKnob, m_osc1Mix, this, std::bind(&MainWindow::updateVoices, this));
     osc1Grid->addLayout(mixKnobLayout, 1, 1, Qt::AlignHCenter | Qt::AlignTop);
-
-    QObject::connect(mixKnob, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = mixKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString::number(newValue, 'f', 0), tooltipPoint, 25000);
-
-        m_osc1Mix = newValue;
-        updateVoices();
-    });
-
-
-    QObject::connect(mixKnob, &KnobControl::hoverEntered, this, [=]() {
-        auto value = mixKnob->value();
-
-        auto tooltipPoint = mixKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString::number(value, 'f', 0), tooltipPoint, 25000);
-    });
-
-    QObject::connect(mixKnob, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
 
     vbOsc1Group->setAlignment(Qt::AlignTop);
 
@@ -291,7 +248,7 @@ QVBoxLayout* MainWindow::createOsc2Layout() {
     vbOscillator->addLayout(gridOscillator);
 
     QVBoxLayout * waveformVerticalLayout = new QVBoxLayout;
-    QLabel *oscWaveformLabel = createLabel(tr("WAVEFORM"), false);
+    QLabel *oscWaveformLabel = createLabel(tr("WAVEFORM"), true, 11);
 
     auto waveformCombo = createComboBox({"Sine", "Square", "Saw", "Triangle"});
     waveformCombo->setCurrentIndex(m_osc2WaveformIndex);
@@ -312,37 +269,15 @@ QVBoxLayout* MainWindow::createOsc2Layout() {
     gridOscillator->addLayout(waveformVerticalLayout, 0, 0, Qt::AlignHCenter | Qt::AlignTop);
 
     QVBoxLayout * detuneKnobLayout;
-
     auto detuneKnob = createKnob(&detuneKnobLayout, -1200, 1200, m_osc2Detune, "DETUNE");
-
-    QObject::connect(detuneKnob, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = detuneKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_osc2Detune = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(detuneKnob, &KnobControl::hoverEntered, this, [=]() {
-        auto value = detuneKnob->value();
-
-        auto tooltipPoint = detuneKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(detuneKnob, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
-
-
+    connectKnobToMember(detuneKnob, m_osc2Detune, this, std::bind(&MainWindow::updateVoices, this));
     gridOscillator->addLayout(detuneKnobLayout, 1, 0, Qt::AlignHCenter | Qt::AlignTop);
 
     // // /////////////////////////////////////////////////
     // // /
 
     QVBoxLayout *intervalVerticalLayout = new QVBoxLayout;
-    QLabel *labelInterval = createLabel(tr("INTERVAL"), false);
+    QLabel *labelInterval = createLabel(tr("INTERVAL"), true, 11);
 
 
     auto intervalCombo = createComboBox({"16'", "8'", "4'"});
@@ -352,6 +287,7 @@ QVBoxLayout* MainWindow::createOsc2Layout() {
     connect(intervalCombo, &QComboBox::currentIndexChanged, this, [=](int index){
         // Handle the selected index
         m_osc2IntervalIndex = index;
+        updateVoices();
     });
 
 
@@ -364,28 +300,8 @@ QVBoxLayout* MainWindow::createOsc2Layout() {
     gridOscillator->addLayout(intervalVerticalLayout, 0, 1, Qt::AlignHCenter | Qt::AlignTop);
 
     QVBoxLayout * mixKnobLayout;
-    auto mixKnob= createKnob(&mixKnobLayout, 0, 100, m_osc2Mix, "Mix");
-
-    QObject::connect(mixKnob, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = mixKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_osc2Mix = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(mixKnob, &KnobControl::hoverEntered, this, [=]() {
-        auto value = mixKnob->value();
-
-        auto tooltipPoint = mixKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(mixKnob, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
-
+    auto mixKnob= createKnob(&mixKnobLayout, 0, 100, m_osc2Mix, "MIX");
+    connectKnobToMember(mixKnob, m_osc2Mix, this, std::bind(&MainWindow::updateVoices, this));
     gridOscillator->addLayout(mixKnobLayout, 1, 1, Qt::AlignHCenter | Qt::AlignTop);
 
     vbOscillator->setAlignment(Qt::AlignTop);
@@ -398,100 +314,21 @@ QVBoxLayout * MainWindow::createFilterLayout() {
     QVBoxLayout *vbFilterGroup = new QVBoxLayout;
 
     QVBoxLayout* knobLayout;
-    auto cutoffKnob = createKnob(&knobLayout, log2(20), log2(20000), m_filterCutoff, tr("Cutoff"));
+    auto cutoffKnob = createKnob(&knobLayout, log2(20), log2(20000), m_filterCutoff, tr("CUTOFF"), 0, true, true, "hz");
+    connectKnobToMember(cutoffKnob, m_filterCutoff, this,  std::bind(&MainWindow::updateVoices, this));
     vbFilterGroup->addLayout(knobLayout);
 
-    QObject::connect(cutoffKnob, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-
-        auto toolTipText = QString("%1 hz").arg(formatNumberPrefix(std::pow(2, newValue)));
-                               //.arg(QString::number(std::pow(2, newValue), 'f', 0));
-
-        auto tooltipPoint = cutoffKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(toolTipText, tooltipPoint, 25000);
-
-        m_filterCutoff = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(cutoffKnob, &KnobControl::hoverEntered, this, [=]() {
-        auto value = cutoffKnob->value();
-        auto tooltipText = QString("%1 hz").arg(formatNumberPrefix(std::pow(2, value)));
-
-        auto tooltipPoint = cutoffKnob->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(tooltipText, tooltipPoint, 25000);
-    });
-
-    QObject::connect(cutoffKnob, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
-
-    auto knobResonance = createKnob(&knobLayout, 0, 20, m_filterQ, tr("Q"));
+    auto knobResonance = createKnob(&knobLayout, 0, 20, m_filterQ, tr("Q"), 1);
+    connectKnobToMember(knobResonance, m_filterQ, this, std::bind(&MainWindow::updateVoices, this));
     vbFilterGroup->addLayout(knobLayout);
 
-    QObject::connect(knobResonance, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobResonance->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_filterQ = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobResonance, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobResonance->value();
-
-        auto tooltipPoint = knobResonance->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobResonance, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
-    auto knobFilterMod = createKnob(&knobLayout, 0, 100, m_filterMod, tr("Mod"));
+    auto knobFilterMod = createKnob(&knobLayout, 0, 100, m_filterMod, tr("MOD"));
+    connectKnobToMember(knobFilterMod, m_filterMod, this, std::bind(&MainWindow::updateVoices, this));
     vbFilterGroup->addLayout(knobLayout);
 
-    QObject::connect(knobFilterMod, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobFilterMod->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_filterMod = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobFilterMod, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobFilterMod->value();
-
-        auto tooltipPoint = knobFilterMod->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobFilterMod, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
-    auto knobFilterEnv = createKnob(&knobLayout, 0, 100, m_filterEnv, tr("Env"));
+    auto knobFilterEnv = createKnob(&knobLayout, 0, 100, m_filterEnv, tr("ENV"));
+    connectKnobToMember(knobFilterEnv, m_filterEnv, this, std::bind(&MainWindow::updateVoices, this));
     vbFilterGroup->addLayout(knobLayout);
-
-    QObject::connect(knobFilterEnv, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobFilterEnv->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_filterQ = newValue;
-        updateVoices();
-    });
-
-
-    QObject::connect(knobFilterEnv, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobFilterEnv->value();
-
-        auto tooltipPoint = knobFilterEnv->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobFilterEnv, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
 
     return vbFilterGroup;
 }
@@ -502,98 +339,24 @@ QHBoxLayout *MainWindow::createFilterEnvelopeLayout() {
 
     QVBoxLayout* knobLayout;
     auto knobFilterEnvelopeA = createKnob(&knobLayout, 0, 100, m_filterEnvelopeA, tr("ATTACK"));
+    connectKnobToMember(knobFilterEnvelopeA, m_filterEnvelopeA, this, std::bind(&MainWindow::updateVoices, this));
     qhbFilterEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
-
-    QObject::connect(knobFilterEnvelopeA, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobFilterEnvelopeA->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_filterEnvelopeA = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobFilterEnvelopeA, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobFilterEnvelopeA->value();
-
-        auto tooltipPoint = knobFilterEnvelopeA->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobFilterEnvelopeA, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
 
     auto knobFilterEnvelopeD = createKnob(&knobLayout, 0, 100, m_filterEnvelopeD, tr("DECAY"));
+    connectKnobToMember(knobFilterEnvelopeD, m_filterEnvelopeD, this, std::bind(&MainWindow::updateVoices, this));
     qhbFilterEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
-
-    QObject::connect(knobFilterEnvelopeD, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobFilterEnvelopeD->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_filterEnvelopeD = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobFilterEnvelopeD, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobFilterEnvelopeD->value();
-
-        auto tooltipPoint = knobFilterEnvelopeD->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobFilterEnvelopeD, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
 
     auto knobFilterEnvelopeS = createKnob(&knobLayout, 0, 100, m_filterEnvelopeS , tr("SUSTAIN"));
+    connectKnobToMember(knobFilterEnvelopeS, m_filterEnvelopeS, this, std::bind(&MainWindow::updateVoices, this));
     qhbFilterEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    QObject::connect(knobFilterEnvelopeS, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobFilterEnvelopeS->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_filterEnvelopeS = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobFilterEnvelopeS, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobFilterEnvelopeS->value();
-
-        auto tooltipPoint = knobFilterEnvelopeS->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobFilterEnvelopeS, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
-    auto knobFilterEnvelopeR = createKnob(&knobLayout, 0, 100, m_filterEnvelopeR , tr("Release"));
+    auto knobFilterEnvelopeR = createKnob(&knobLayout, 0, 100, m_filterEnvelopeR , tr("RELEASE"));
+    connectKnobToMember(knobFilterEnvelopeR, m_filterEnvelopeR, this, std::bind(&MainWindow::updateVoices, this));
     qhbFilterEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
-
-    QObject::connect(knobFilterEnvelopeR, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobFilterEnvelopeR->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_filterEnvelopeR = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobFilterEnvelopeR, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobFilterEnvelopeR->value();
-
-        auto tooltipPoint = knobFilterEnvelopeR->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobFilterEnvelopeR, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
     return qhbFilterEnvelope;
 }
 
@@ -602,99 +365,24 @@ QHBoxLayout *MainWindow::createVolumeEnvelopeLayout() {
     QVBoxLayout* knobLayout;
 
     auto knobVolumeEnvelopeA = createKnob(&knobLayout, 0, 100, m_volumeEnvelopeA, tr("ATTACK"));
+    connectKnobToMember(knobVolumeEnvelopeA, m_volumeEnvelopeA, this, std::bind(&MainWindow::updateVoices, this));
     qhbVolumeEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    QObject::connect(knobVolumeEnvelopeA, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobVolumeEnvelopeA->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_volumeEnvelopeA = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobVolumeEnvelopeA, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobVolumeEnvelopeA->value();
-
-        auto tooltipPoint = knobVolumeEnvelopeA->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobVolumeEnvelopeA, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
-    auto knobVolumeEnvelopeD = createKnob(&knobLayout, 0, 100, m_volumeEnvelopeD, tr("Decay"));
+    auto knobVolumeEnvelopeD = createKnob(&knobLayout, 0, 100, m_volumeEnvelopeD, tr("DECAY"));
+    connectKnobToMember(knobVolumeEnvelopeD, m_volumeEnvelopeD, this, std::bind(&MainWindow::updateVoices, this));
     qhbVolumeEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    QObject::connect(knobVolumeEnvelopeD, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobVolumeEnvelopeD->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_volumeEnvelopeD = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobVolumeEnvelopeD, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobVolumeEnvelopeD->value();
-
-        auto tooltipPoint = knobVolumeEnvelopeD->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobVolumeEnvelopeD, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
-    auto knobVolumeEnvelopeS = createKnob(&knobLayout, 0, 100, m_volumeEnvelopeS, tr("Sustain"));
+    auto knobVolumeEnvelopeS = createKnob(&knobLayout, 0, 100, m_volumeEnvelopeS, tr("SUSTAIN"));
+    connectKnobToMember(knobVolumeEnvelopeS, m_volumeEnvelopeS, this, std::bind(&MainWindow::updateVoices, this));
     qhbVolumeEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    QObject::connect(knobVolumeEnvelopeS, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobVolumeEnvelopeS->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_volumeEnvelopeS = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobVolumeEnvelopeS, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobVolumeEnvelopeS->value();
-
-        auto tooltipPoint = knobVolumeEnvelopeS->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobVolumeEnvelopeS, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
-    auto knobVolumeEnvelopeR = createKnob(&knobLayout, 0, 100, m_volumeEnvelopeR, tr("Release"));
+    auto knobVolumeEnvelopeR = createKnob(&knobLayout, 0, 100, m_volumeEnvelopeR, tr("RELEASE"));
+    connectKnobToMember(knobVolumeEnvelopeR, m_volumeEnvelopeR, this, std::bind(&MainWindow::updateVoices, this));
     qhbVolumeEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
-
-    QObject::connect(knobVolumeEnvelopeR, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobVolumeEnvelopeR->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_volumeEnvelopeR = newValue;
-        updateVoices();
-    });
-
-
-
-    QObject::connect(knobVolumeEnvelopeR, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobVolumeEnvelopeR->value();
-
-        auto tooltipPoint = knobVolumeEnvelopeR->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobVolumeEnvelopeR, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
 
     return qhbVolumeEnvelope;
 }
@@ -703,90 +391,26 @@ QHBoxLayout *MainWindow::createMasterLayout() {
     QHBoxLayout *qhbMaster = new QHBoxLayout;
 
     QVBoxLayout* knobLayout;
-    auto knobDrive = createKnob(&knobLayout, 0, 100, m_overdrive , tr("Drive"));
+    auto knobDrive = createKnob(&knobLayout, 0, 100, m_overdrive , tr("DRIVE"));
+    connectKnobToMember(knobDrive, m_overdrive, this, std::bind(&MainWindow::updateVoices, this));
     qhbMaster->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    QObject::connect(knobDrive, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
 
-        auto tooltipPoint = knobDrive->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_overdrive = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobDrive, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobDrive->value();
-
-        auto tooltipPoint = knobDrive->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobDrive, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
-    auto knobReverb = createKnob(&knobLayout, 0, 100, m_reverb, tr("Reverb"));
+    auto knobReverb = createKnob(&knobLayout, 0, 100, m_reverb, tr("REVERB"));
+    connectKnobToMember(knobReverb, m_reverb, this, std::bind(&MainWindow::updateVoices, this));
     qhbMaster->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    QObject::connect(knobReverb, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-        auto tooltipPoint = knobReverb->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
 
-        m_reverb = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobReverb, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobReverb->value();
-
-        auto tooltipPoint = knobReverb->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobReverb, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
-
-
-    auto knobVolume = createKnob(&knobLayout, 0, 100, m_volume, tr("Volume"));
+    auto knobVolume = createKnob(&knobLayout, 0, 100, m_volume, tr("VOLUME"));
+    connectKnobToMember(knobVolume, m_volume, this, std::bind(&MainWindow::updateVoices, this));
     qhbMaster->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
-
-    QObject::connect(knobVolume, &KnobControl::knobChanged, this, [=](double oldValue, double newValue) {
-
-        auto tooltipPoint = knobVolume->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(newValue, 'f', 0)), tooltipPoint, 25000);
-
-        m_volume = newValue;
-        updateVoices();
-    });
-
-    QObject::connect(knobVolume, &KnobControl::hoverEntered, this, [=]() {
-        auto value = knobVolume->value();
-
-        auto tooltipPoint = knobVolume->centerPoint() + QPoint(-5, -20);
-        m_tooltip.showTooltip(QString("%1").arg(QString::number(value, 'f', 0)), tooltipPoint, 25000);
-    });
-
-    QObject::connect(knobVolume, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
-    });
 
     QVBoxLayout *dropdownLayout = new QVBoxLayout;
-
     QComboBox *midiInCombo = new QComboBox;
-
-    QComboBox *octaveCombo = new QComboBox;
-    octaveCombo->addItem("+3");
-    octaveCombo->addItem("+2");
-    octaveCombo->addItem("+1");
-    octaveCombo->addItem("NORMAL");
-    octaveCombo->addItem("-1");
-    octaveCombo->addItem("-2");
-    octaveCombo->addItem("-3");
+    QComboBox *octaveCombo = createComboBox({"+3", "+2", "+1", "NORMAL", "-1", "-2", "-3"});
 
     octaveCombo->setCurrentIndex(m_keyboardOctaveIndex);
 
@@ -796,14 +420,14 @@ QHBoxLayout *MainWindow::createMasterLayout() {
         updateVoices();
     });
 
-    auto midiLabel = createLabel(tr("MIDI IN"), true);
+    auto midiLabel = createLabel(tr("MIDI IN"), true, 11);
     midiLabel->setAlignment(Qt::AlignTop);
     dropdownLayout->addWidget(midiLabel);
     dropdownLayout->addWidget(midiInCombo);
 
     dropdownLayout->addItem(new QSpacerItem(0, 15));
 
-    auto octaveLabel = createLabel(tr("OCTAVE"), true);
+    auto octaveLabel = createLabel(tr("OCTAVE"), true, 11);
     octaveLabel->setAlignment(Qt::AlignTop);
     dropdownLayout->addWidget(octaveLabel);
     dropdownLayout->addWidget(octaveCombo);
@@ -817,31 +441,76 @@ QHBoxLayout *MainWindow::createMasterLayout() {
 
 QWidget *MainWindow::createKeyboardWidget() {
     QWidget* keyBox = new QWidget;
-    keyBox->setFixedSize(910, 260);
+    keyBox->setFixedSize(910, 220);
     keyBox->setContentsMargins(0, 0, 0, 0);
+
+    std::vector<QString> noteNames = {"C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"};
+
+    QString whiteStyleSheet = QString(R"(
+                QPushButton {
+                    background-color: white; border: 1px solid black;
+                    border-bottom-right-radius: 5px; border-bottom-left-radius: 5px;
+                }
+                QPushButton:hover { background: lightgray; }
+                QPushButton:pressed {
+                    background: #777777;
+                    padding-top: 2px;
+                }
+    )");
+
+    keyBox->setStyleSheet(whiteStyleSheet);
 
     QHBoxLayout* whiteKeysLayout = new QHBoxLayout;
     whiteKeysLayout->setSpacing(0);
     whiteKeysLayout->setContentsMargins(0, 0, 0, 0);
-    whiteKeysLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
 
-    QString whiteKeyStyle = "background: white; border: 1px solid black; "
-                            "border-bottom-right-radius: 5px; "
-                            "border-bottom-left-radius: 5px;"
-                            "margin: 0px; padding: 0px;";
+    const std::vector<int> whiteNoteIndexes = {0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23};
+    const std::vector<int> blackNoteIndexes = {1, 3, 6, 8, 10, 13, 15, 18, 20, 22};
 
     for (int i = 0; i < 14; ++i) {
-        auto key = new PianoKey(whiteKeyStyle, keyBox);
+
+        auto key = new PianoKey("", keyBox);
         whiteKeysLayout->addWidget(key);
+
+        QLabel *label = new QLabel(noteNames[whiteNoteIndexes[i] % 12]);
+        label->setAlignment(Qt::AlignBottom | Qt::AlignHCenter);
+
+        QVBoxLayout *layout = new QVBoxLayout(key);
+        layout->addWidget(label);
+
+        QFont font("Afacad Flux");
+        font.setBold(true);
+        label->setFont(font);
+
+        connect(key, &QPushButton::pressed, this, [=]() {
+            noteOn(calculateNoteIndex(m_keyboardOctaveIndex, whiteNoteIndexes[i]));
+        });
     }
 
     QWidget* blackKeysWidget = new QWidget(keyBox);
-    blackKeysWidget->setFixedSize(910, 150);  // Black keys only take up 150px height
+    blackKeysWidget->setFixedSize(910, 130);  // Black keys only take up 150px height
     blackKeysWidget->move(0, 10);  // Positioned absolutely on top of the white keys
 
-    QString blackKeyStyle = "background: black; border-bottom-right-radius: 5px; "
-                            "border-bottom-left-radius: 5px; "
-                            "margin: 0px; padding: 0px;";
+    QString blackStyleSheet = QString(R"(
+            QPushButton {
+                background-color: black;
+                border-bottom-right-radius: 5px;
+                border-bottom-left-radius: 5px;
+            }
+
+            QPushButton:hover {
+                background-color: #555;
+            }
+
+            QPushButton:pressed {
+                background: #777777;
+                padding-top: 2px;
+            }
+
+    )");
+
+    blackKeysWidget->setStyleSheet(blackStyleSheet);
+    QString blackKeyStyle = "margin: 0px; padding: 0px; color: white;";
 
     // List of X positions for each black key relative to the keyBox
     const int spacing = 60;
@@ -850,13 +519,30 @@ QWidget *MainWindow::createKeyboardWidget() {
 
     // Manually position black keys at precise locations
     for (int i = 0; i < blackKeyPositions.size(); ++i) {
+
         BlackKey* blackKey = new BlackKey(blackKeyStyle, blackKeysWidget);
-        blackKey->setFixedSize(40, 150);  // Same size as before
+        blackKey->setFixedSize(40, 130);  // Same size as before
         blackKey->move(blackKeyPositions[i], 0);  // Set the exact X position
+
+        QLabel *label = new QLabel(noteNames[blackNoteIndexes[i] % 12]);
+        label->setAlignment(Qt::AlignBottom | Qt::AlignHCenter);
+
+        QFont font("Afacad Flux");
+        font.setBold(true);
+        label->setFont(font);
+
+        QVBoxLayout *layout = new QVBoxLayout(blackKey);
+        layout->addWidget(label);
+
+        connect(blackKey, &QPushButton::pressed, this, [=]() {
+            noteOn(calculateNoteIndex(m_keyboardOctaveIndex, blackNoteIndexes[i]));
+        });
+
     }
 
     QVBoxLayout* pianoLayout = new QVBoxLayout(keyBox);
     pianoLayout->addLayout(whiteKeysLayout);
+    pianoLayout->setAlignment(Qt::AlignHCenter);
 
     return keyBox;
 }
@@ -874,25 +560,20 @@ void MainWindow::buildLayout() {
     gridWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     gridWidget->setLayout(gridLayout);
 
-    gridWidget->setObjectName("GridWidget");
-    gridWidget->setStyleSheet("#GridWidget { border: 4px solid blue; border-radius: 8px; }");
-
-    gridLayout->setContentsMargins(50, 50, 50, 50);
+    gridWidget->setObjectName("gridWidget");
+    gridWidget->setStyleSheet("#gridWidget { background-color: black; }");
 
     mainLayout->addWidget(gridWidget);
-    //mainLayout->addLayout(gridLayout);
-
-    // auto uiSpacer = new QSpacerItem(0, 1);
-    // mainLayout->addItem(uiSpacer);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
 
     // Add widgets and layouts to the grid
-    QGroupBox *gbMod = createGroupBox(tr("Mod"));
-    QGroupBox *gbOsc1 = createGroupBox(tr("Osc1"));
-    QGroupBox *gbOsc2 = createGroupBox(tr("Osc2"));
-    QGroupBox *gbFilter = createGroupBox(tr("Filter"));
-    QGroupBox *gbFilterEnv = createGroupBox(tr("Filter Envelope"));
-    QGroupBox *gbVolumeEnv = createGroupBox(tr("Volume Envelope"));
-    QGroupBox *gbMaster = createGroupBox(tr("Master"));
+    QGroupBox *gbMod = createGroupBox(tr("MOD"));
+    QGroupBox *gbOsc1 = createGroupBox(tr("OSC1"));
+    QGroupBox *gbOsc2 = createGroupBox(tr("OSC2"));
+    QGroupBox *gbFilter = createGroupBox(tr("FILTER"));
+    QGroupBox *gbFilterEnv = createGroupBox(tr("FILTER ENVELOPE"));
+    QGroupBox *gbVolumeEnv = createGroupBox(tr("VOLUME ENVELOPE"));
+    QGroupBox *gbMaster = createGroupBox(tr("MASTER"));
 
     gbMod->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
     gbOsc1->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
@@ -909,9 +590,6 @@ void MainWindow::buildLayout() {
     gridLayout->addWidget(gbOsc1, 0, 1);
     gbOsc1->setLayout(createOsc1Layout());
 
-    auto spacer = new QSpacerItem(0, 1, QSizePolicy::Minimum, QSizePolicy::Minimum);
-    gridLayout->addItem(spacer, 1, 1);
-
     gridLayout->addWidget(gbOsc2, 2, 1);
     gbOsc2->setLayout(createOsc2Layout());
 
@@ -927,29 +605,46 @@ void MainWindow::buildLayout() {
     gridLayout->addWidget(gbMaster, 2, 3);
     gbMaster->setLayout(createMasterLayout());
 
-    gridLayout->setContentsMargins(10, 10, 10, 10);
+    gridLayout->setContentsMargins(0, 0, 0, 0);
     gridLayout->setAlignment(Qt::AlignTop);
+    gridLayout->setContentsMargins(15, 15, 15, 15);
 
     QWidget* pianoWidget = createKeyboardWidget();  // This will be the function where you create your piano
 
     QVBoxLayout *pianoLayout = new QVBoxLayout;
     QWidget* pianoHolderWidget = new QWidget;
+    pianoHolderWidget->setContentsMargins(0, 0, 0, 0);
+    pianoHolderWidget->setFixedWidth(1024);
 
-    pianoLayout->addWidget(pianoWidget, 0, Qt::AlignBottom);
+    pianoLayout->setAlignment(Qt::AlignHCenter);
 
+    pianoLayout->addWidget(pianoWidget);
 
-    pianoHolderWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pianoHolderWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
     pianoHolderWidget->setLayout(pianoLayout);
 
     pianoHolderWidget->setObjectName("pianoHolder");
-    pianoHolderWidget->setStyleSheet("#pianoHolder { background-color: #ccc; padding: 0; }");
+    pianoHolderWidget->setStyleSheet("#pianoHolder { background-color: #333; }");
 
-    mainLayout->addWidget(pianoHolderWidget, 0, Qt::AlignHCenter);
-
+    mainLayout->addWidget(pianoHolderWidget);
 }
 
 
 void MainWindow::updateVoices() {
+    qDebug() << "m_filterCutoff" << m_filterCutoff;
+    qDebug() << "m_modFrequency" << m_modFrequency;
+    qDebug() << "m_osc1ModMix" << m_osc1ModMix;
+    qDebug() << "m_osc2ModMix" << m_osc2ModMix;
+    qDebug() << "m_filterEnv" << m_filterEnv;
+}
+
+void MainWindow::noteOn(int noteIndex) {
+
+    qDebug() << "NoteOn => Note Index: " << noteIndex;
+    qDebug() << "Frequency: " << 440.0 * std::pow(2.0, (noteIndex - 69) / 12.0);
+}
+
+void MainWindow::noteOff(int noteIndex) {
 
 }
 

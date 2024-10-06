@@ -13,6 +13,7 @@
 #include "knobcontrol.h"
 #include "spritesheet.h"
 #include "tooltip.h"
+#include "voice.h"
 
 typedef std::function<void(double, double)> FnChange;
 typedef std::function<QString(double)> FnFormat;
@@ -30,7 +31,16 @@ protected:
     void buildLayout();
 
     QLabel * createLabel(QString text, bool bold, int pointSize = -1);
-    KnobControl* createKnob(QVBoxLayout ** layout, double minimum, double maximum, double initialValue, QString labelText);
+    KnobControl* createKnob(QVBoxLayout ** layout,
+                            double minimum,
+                            double maximum,
+                            double initialValue,
+                            QString labelText,
+                            int decimalPlaces = 0,
+                            bool log = false,
+                            bool useFormatter = false,
+                            QString suffixText = ""
+                            );
 
     QGroupBox * createGroupBox(QString title, int pointSize = -1);
 
@@ -48,14 +58,21 @@ protected:
     QHBoxLayout  * createMasterLayout();
     QWidget  * createKeyboardWidget();
 
+private slots:
+
+protected:
     void updateVoices();
 
+    void noteOn(int nodeIndex);
+    void noteOff(int nodeIndex);
 
-
-private slots:
+    void showTooltip(const QPoint &point, QString toolTipText);
+    void showKnobTooltip(const KnobControl* knob, int decimalPlaces = 0, bool logarithmic = false, bool useFormatter = false, QString suffix = "");
 
 private:
     std::shared_ptr<SpriteSheet> m_spritesheet;
+
+    std::unique_ptr<Voice> m_voices[255] = {};
 
     std::unique_ptr<AudioPlayer> m_audioPlayer;
     std::unique_ptr<GainNode> m_masterGain;

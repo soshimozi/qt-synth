@@ -22,7 +22,7 @@ set(PROJECT_SOURCES
     src/audionode.cpp src/audionode.h
     src/audioplayer.cpp src/audioplayer.h
     src/automationnode.cpp src/automationnode.h
-    src/blackkey.cpp src/blackkey.h
+
     src/definitions.h
     src/gainnode.cpp src/gainnode.h
     src/helpers.cpp src/helpers.h
@@ -32,10 +32,11 @@ set(PROJECT_SOURCES
     src/mainwindow.cpp src/mainwindow.h
     src/mixernode.cpp src/mixernode.h
     src/oscillatornode.cpp src/oscillatornode.h
-    src/pianokey.cpp src/pianokey.h
+    src/pianokey.h
     src/spritesheet.cpp src/spritesheet.h
     src/tooltip.cpp src/tooltip.h
     src/voice.cpp src/voice.h
+    src/envelopenode.h src/envelopenode.cpp
 )
 
 set(PROJECT_RESOURCES
@@ -47,6 +48,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
+        src/blackkey.h
     )
 
 # Define target properties for Android with Qt 6 as:
