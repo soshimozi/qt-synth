@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PORTAUDIO_BASE_DIR "d:/portaudio")
 
 if(NOT PORTAUDIO_BASE_DIR)
-    message(FATAL_ERROR "Please provide the base directory for PortAudio using -DPORTAUDIO_BASE_DIR=<path>")
+   message(FATAL_ERROR "Please provide the base directory for PortAudio using -DPORTAUDIO_BASE_DIR=<path>")
 endif()
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
@@ -20,7 +20,6 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 set(PROJECT_SOURCES
     src/audionode.cpp src/audionode.h
-    src/audioplayer.cpp src/audioplayer.h
     src/automationnode.cpp src/automationnode.h
 
     src/definitions.h
@@ -32,11 +31,12 @@ set(PROJECT_SOURCES
     src/mainwindow.cpp src/mainwindow.h
     src/mixernode.cpp src/mixernode.h
     src/oscillatornode.cpp src/oscillatornode.h
-    src/pianokey.h
+    src/whitekey.h src/blackkey.h
     src/spritesheet.cpp src/spritesheet.h
     src/tooltip.cpp src/tooltip.h
     src/voice.cpp src/voice.h
     src/envelopenode.h src/envelopenode.cpp
+    src/audioplayer.cpp src/audioplayer.h
 )
 
 set(PROJECT_RESOURCES
@@ -48,7 +48,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
-        src/blackkey.h
+        src/voicenode.h src/voicenode.cpp
     )
 
 # Define target properties for Android with Qt 6 as:

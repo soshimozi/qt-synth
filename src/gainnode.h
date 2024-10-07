@@ -10,12 +10,11 @@ public:
 	void processInternal(unsigned frames) override;
 	void setGain(float gain);
 
-	void addAutomation(AudioNode* node, unsigned port) override;
-	AudioNode* removeAutomation(unsigned port) override;
-
 private:
 	AutomationNode gain_parameter_node_;
 
 protected:
+    void addAutomation(AudioNode* node, unsigned port) override;
+    AudioNode* removeAutomation(unsigned port) override;
 
 };

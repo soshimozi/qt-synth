@@ -8,6 +8,7 @@
 #include <qgroupbox.h>
 #include <qlabel.h>
 
+//#include "audioplayer.h"
 #include "audioplayer.h"
 #include "gainnode.h"
 #include "knobcontrol.h"
@@ -24,7 +25,7 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    ~MainWindow() = default;
+    ~MainWindow() { m_audioPlayer.stop(); }
 
 
 protected:
@@ -74,8 +75,9 @@ private:
 
     std::unique_ptr<Voice> m_voices[255] = {};
 
-    std::unique_ptr<AudioPlayer> m_audioPlayer;
-    std::unique_ptr<GainNode> m_masterGain;
+    //std::unique_ptr<AudioPlayer> m_audioPlayer;
+    AudioPlayer m_audioPlayer;
+    GainNode m_masterGain;
     bool m_playing;
 
     // values for new voices

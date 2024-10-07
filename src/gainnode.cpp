@@ -18,7 +18,7 @@ void GainNode::addAutomation(AudioNode* node, unsigned port) {
 AudioNode* GainNode::removeAutomation(unsigned port) {
 
 	if(port == 0)	{
-		AudioNode* node = gain_parameter_node_.getInput();
+		AudioNode* node = gain_parameter_node_.input();
 		gain_parameter_node_.setInput(nullptr);
 		return node;
 	}
@@ -39,8 +39,8 @@ void GainNode::processInternal(const unsigned frames) {
 
 	m_input->process(frames, m_last_processing_id);
 
-	const float* input_buffer = m_input->getBuffer();
-	const float* gain_buffer = gain_parameter_node_.getBuffer();
+	const float* input_buffer = m_input->buffer();
+	const float* gain_buffer = gain_parameter_node_.buffer();
 
 	for(unsigned int i = 0; i < frames; i++) {
 		m_buffer[i] = input_buffer[i] * gain_buffer[i];

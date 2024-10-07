@@ -1,5 +1,5 @@
-#ifndef PIANOKEY_H
-#define PIANOKEY_H
+#ifndef WHITEKEY_H
+#define WHITEKEY_H
 
 #include <QPushButton>
 
@@ -15,4 +15,4 @@ public:
     }
 };
 
-#endif // PIANOKEY_H
+#endif // WHITEKEY_H

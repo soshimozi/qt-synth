@@ -39,7 +39,7 @@ void MixerNode::processInternal(unsigned frames) {
 
 			inputs_[i]->process(frames, m_last_processing_id);
 
-			const float* input_buffer = inputs_[i]->getBuffer();
+			const float* input_buffer = inputs_[i]->buffer();
 
 			// Add the input to the mix buffer with the corresponding gain
 			for(unsigned int j = 0; j < frames; ++j) {

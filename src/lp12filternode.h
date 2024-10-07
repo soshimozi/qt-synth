@@ -5,18 +5,23 @@
 class LP12FilterNode : public AudioNode
 {
 public:
-    LP12FilterNode(float initial_cutoff = 20000.0f, float initial_resonance = 1.0f, float initial_detune = 0.0f, float sample_rate = 44100);
+    enum class Parameters {
+        Cutoff = 0,
+        Resonance = 1,
+        Detune = 2
+    };
 
+public:
+    LP12FilterNode(float initial_cutoff = 20000.0f, float initial_resonance = 1.0f, float initial_detune = 0.0f, float sample_rate = 44100);
 
 	void setCutoff(float cutoff);
 	void setResonance(float resonance);
     void setDetune(float detune);
 
-    void addAutomation(AudioNode* node, unsigned port) override;
-    AudioNode* removeAutomation(unsigned port) override;
-
 protected:
 	void processInternal(unsigned frames) override;
+    void addAutomation(AudioNode* node, unsigned port) override;
+    AudioNode* removeAutomation(unsigned port) override;
 
 private:
     void calculateCoefficients(float cutoff, float resonance, float detune);  // Calculate the filter coefficients
