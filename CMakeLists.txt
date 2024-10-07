@@ -34,9 +34,10 @@ set(PROJECT_SOURCES
     src/whitekey.h src/blackkey.h
     src/spritesheet.cpp src/spritesheet.h
     src/tooltip.cpp src/tooltip.h
-    src/voice.cpp src/voice.h
     src/envelopenode.h src/envelopenode.cpp
     src/audioplayer.cpp src/audioplayer.h
+    src/voicenode.h src/voicenode.cpp
+
 )
 
 set(PROJECT_RESOURCES
@@ -48,7 +49,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
-        src/voicenode.h src/voicenode.cpp
     )
 
 # Define target properties for Android with Qt 6 as:

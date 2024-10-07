@@ -1,3 +1,20 @@
 #include "voicenode.h"
 
-VoiceNode::VoiceNode() {}
+VoiceNode::VoiceNode(wave_shape mod_waveform,
+          wave_shape oscillator_1_waveform,
+          wave_shape oscillator_2_waveform,
+          float mod_frequency,
+          float oscillator_1_mod_mix,
+          float oscillator_2_mod_mix,
+          float oscillator_1_frequency,
+          float oscillator_2_frequency,
+          float filter_cutoff,
+          float filter_q,
+          float filter_mod_mix,
+          float filter_env_mix,
+          ADSR filter_envelope,
+          ADSR volume_envelope,
+          float drive,
+          float reverb,
+          float volume
+          ) {}

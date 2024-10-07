@@ -5,6 +5,7 @@
 class GainNode final : public AudioNode
 {
 public:
+    GainNode() : gain_parameter_node_(1.0) {} // Default constructor with default gain value
 	explicit GainNode(float gain);
 
 	void processInternal(unsigned frames) override;
