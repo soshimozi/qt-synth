@@ -19,12 +19,18 @@ public:
 	void process(unsigned int frames, unsigned int processing_id);
 
     void setInput(AudioNode* node);
-    AudioNode* getInput() const { return m_input; }
+    AudioNode* input() const { return m_input; }
 
-	float* getBuffer() const;
+    float* buffer() const;
 
 
-    void automate(AudioNode *node, int index) { node->addAutomation(this, index); }
+    // void automate(AudioNode *node, int index) { node->addAutomation(this, index); }
+
+    template<typename ParamType>
+    void automate(AudioNode* node, ParamType index) {
+        node->addAutomation(this, static_cast<unsigned int>(index)); // Type-safe index
+    }
+
     void connect(AudioNode *node) { node->setInput(this); }
 
 protected:

@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "blackkey.h"
-#include "pianokey.h"
+#include "whitekey.h"
 #include "spritesheet.h"
 #include "knobcontrol.h"
 #include "helpers.h"
@@ -650,8 +650,7 @@ void MainWindow::noteOff(int noteIndex) {
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , m_audioPlayer(std::make_unique<AudioPlayer>(nullptr))
-    , m_masterGain(std::make_unique<GainNode>(0))
+    , m_masterGain(0.0)
     , m_playing(false)
 {
 
@@ -660,12 +659,17 @@ MainWindow::MainWindow(QWidget *parent)
     m_spritesheet->setCells(101);  // Number of cells (frames)
     m_spritesheet->setSource(":/images/LittlePhatty.png");  // Make sure to have a valid image here
 
-    buildLayout();
+    try {
+        buildLayout();
+    } catch(const std::exception& ex) {
+
+    }
+
 
     // Set the callback for the audio player
-    m_audioPlayer->setCallback([this](const void* user_data, float* output, unsigned long frames_per_buffer) {
-        m_masterGain->process(frames_per_buffer, last_processing_id++);  // Process the signal chain
-        float* gainBuffer = m_masterGain->getBuffer();  // Get the processed buffer
+    m_audioPlayer.setCallback([this](const void* user_data, float* output, unsigned long frames_per_buffer) {
+        m_masterGain.process(frames_per_buffer, last_processing_id++);  // Process the signal chain
+        float* gainBuffer = m_masterGain.buffer();  // Get the processed buffer
 
         // Copy the buffer to the output
         for (unsigned long i = 0; i < frames_per_buffer; ++i) {
@@ -675,11 +679,16 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     // Initialize and start the audio player
-    if (!m_audioPlayer->initializeStream()) {
+    if (!m_audioPlayer.initializeStream()) {
         qDebug() << "Failed to initialize audio stream!";
     }
 
-    if (!m_audioPlayer->start()) {
+    if (!m_audioPlayer.start()) {
         qDebug() << "Failed to start audio stream!";
     }
+
+    // auto osc = std::make_shared<OscillatorNode>();
+
+    // osc->setFrequency(440);
+    // osc->connect(m_masterGain.get());
 }

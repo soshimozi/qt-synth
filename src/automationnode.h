@@ -11,8 +11,6 @@ public:
 
 protected:
     void processInternal(unsigned int frames) override;
-
-public:
 	void addAutomation(AudioNode* node, unsigned port) override {}
     AudioNode* removeAutomation(unsigned port) override { return nullptr; }
 

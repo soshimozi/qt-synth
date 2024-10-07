@@ -1,16 +1,17 @@
 ﻿#include "oscillatornode.h"
 
+#include <algorithm>
 #include <cmath>
 #include "definitions.h"
 
 
 OscillatorNode::OscillatorNode(const wave_shape waveform, const float frequency, const float detune, const float pulse_width, const float sample_rate)
-    :m_waveform(waveform), m_phase(0.0f),  m_sample_rate(sample_rate),
+    :m_waveform(waveform), m_phase(0.0f), m_detune_cents(detune),  m_sample_rate(sample_rate),
     frequency_parameter_node_(frequency), pulse_width_parameter_node_(pulse_width) {
 }
 
 void OscillatorNode::setFrequency(const float frequency) {
-    this->frequency_parameter_node_.setStaticValue(frequency);
+    frequency_parameter_node_.setStaticValue(frequency);
 }
 
 void OscillatorNode::setWaveform(const wave_shape waveform) {
@@ -18,9 +19,12 @@ void OscillatorNode::setWaveform(const wave_shape waveform) {
 }
 
 void OscillatorNode::setPulseWidth(const float pulse_width) {
-    this->pulse_width_parameter_node_.setStaticValue(pulse_width);
+    pulse_width_parameter_node_.setStaticValue(pulse_width);
 }
 
+void OscillatorNode::setDetune(const float detune) {
+    m_detune_cents = detune;
+}
 void OscillatorNode::processInternal(const unsigned int frames) {
     ensureBufferSize(frames);
 
@@ -28,16 +32,15 @@ void OscillatorNode::processInternal(const unsigned int frames) {
     pulse_width_parameter_node_.process(frames, m_last_processing_id);
 
     const auto frequency_buffer = std::make_unique<float[]>(frames);
-    memcpy(frequency_buffer.get(), frequency_parameter_node_.getBuffer(), frames * sizeof(float));
+    memcpy(frequency_buffer.get(), frequency_parameter_node_.buffer(), frames * sizeof(float));
 
     const auto pulse_width_buffer = std::make_unique<float[]>(frames);
-    memcpy(pulse_width_buffer.get(), pulse_width_parameter_node_.getBuffer(), frames * sizeof(float));
-
+    memcpy(pulse_width_buffer.get(), pulse_width_parameter_node_.buffer(), frames * sizeof(float));
 
     // Generate waveform samples
     for (unsigned int i = 0; i < frames; ++i) {
-	    const float current_freq = frequency_buffer[i];
-	    const float current_pulse_width = pulse_width_buffer[i];
+        const float current_freq = frequency_buffer[i] * std::pow(2.0f, m_detune_cents / 1200.0f);
+        const float current_pulse_width = pulse_width_buffer[i];
 
         m_buffer[i] = generateSample(m_phase, current_pulse_width);
 
@@ -48,6 +51,39 @@ void OscillatorNode::processInternal(const unsigned int frames) {
             m_phase -= TWO_PI;
         }
     }
+
+
+    // ensureBufferSize(frames);
+
+    // frequency_parameter_node_.process(frames, m_last_processing_id);
+    // pulse_width_parameter_node_.process(frames, m_last_processing_id);
+
+    // // Copy frequency and pulse width buffers
+    // const float* frequency_buffer = frequency_parameter_node_.buffer();
+    // const float* pulse_width_buffer = pulse_width_parameter_node_.buffer();
+
+    // // Generate waveform samples using std::transform
+    // float phase = m_phase;
+    // float detune_cents = m_detune_cents;
+    // float sample_rate = m_sample_rate;
+
+    // std::transform(frequency_buffer, frequency_buffer + frames, pulse_width_buffer, m_buffer.get(),
+    //                [this, phase, detune_cents, sample_rate](float current_freq, float current_pulse_width) mutable {
+    //                    // Apply detune
+    //                    float detuned_freq = current_freq * std::pow(2.0f, detune_cents / 1200.0f);
+
+    //                    // Update phase
+    //                    float phase_increment = TWO_PI * detuned_freq / sample_rate;
+    //                    phase += phase_increment;
+    //                    if (phase >= TWO_PI) {
+    //                        phase -= TWO_PI;
+    //                    }
+
+    //                    // Generate sample based on waveform type
+    //                    return generateSample(phase, current_pulse_width);
+    //                });
+
+    // m_phase = phase;
 }
 
 float OscillatorNode::generateSample(const float phase, const float current_pulse_width) const
@@ -103,23 +139,31 @@ float OscillatorNode::pulse(const float phase, const float current_pulse_width) 
 }
 
 void OscillatorNode::addAutomation(AudioNode* node, const unsigned port) {
-    if(port == 0) {
+
+    switch(static_cast<Parameters>(port))
+    {
+    case Parameters::Frequency:
         frequency_parameter_node_.setInput(node);
-    } else if(port == 1) {
+        break;
+    case Parameters::PulseWidth:
         pulse_width_parameter_node_.setInput(node);
+        break;
     }
 }
 
 AudioNode* OscillatorNode::removeAutomation(const unsigned port) {
 
     AudioNode* node = nullptr;
-	if(port == 0) {
-        node = frequency_parameter_node_.getInput();
+    switch(static_cast<Parameters>(port)) {
+    case Parameters::Frequency:
+        node = frequency_parameter_node_.input();
         frequency_parameter_node_.setInput(nullptr);
-	} else if(port == 1) {
-        node = pulse_width_parameter_node_.getInput();
-        frequency_parameter_node_.setInput(nullptr);
-	}
+        break;
+    case Parameters::PulseWidth:
+        node = pulse_width_parameter_node_.input();
+        pulse_width_parameter_node_.setInput(nullptr);
+        break;
+    }
 
     return node;
 }

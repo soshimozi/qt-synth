@@ -30,31 +30,61 @@ void LP12FilterNode::addAutomation(AudioNode* node, unsigned port) {
 	// port 0 = cutoff
 	// port 1 = resonance
 
-	if(port == 0)
-	{
-		cutoffParameterNode_.setInput(node);
-	} else if(port == 1)
-	{
-		resonanceParameterNode_.setInput(node);
-    } else if(port == 2) {
+    switch(static_cast<Parameters>(port))    {
+    case Parameters::Cutoff:
+        cutoffParameterNode_.setInput(node);
+        break;
+    case Parameters::Resonance:
+        resonanceParameterNode_.setInput(node);
+        break;
+    case Parameters::Detune:
         detuneParameterNode_.setInput(node);
+        break;
     }
+
+    // if(port == 0)
+    // {
+    // 	cutoffParameterNode_.setInput(node);
+    // } else if(port == 1)
+    // {
+    // 	resonanceParameterNode_.setInput(node);
+ //    } else if(port == 2) {
+ //        detuneParameterNode_.setInput(node);
+ //    }
 }
 
 AudioNode* LP12FilterNode::removeAutomation(unsigned port)
 {
 	AudioNode* node = nullptr;
-	if (port == 0) {
-		node = cutoffParameterNode_.getInput();
-		cutoffParameterNode_.setInput(nullptr);
-	}
-	else if (port == 1) {
-		node = resonanceParameterNode_.getInput();
-		resonanceParameterNode_.setInput(nullptr);
-    } else if(port == 2) {
-        node = detuneParameterNode_.getInput();
+    switch(static_cast<Parameters>(port))
+    {
+    case Parameters::Cutoff:
+        node = cutoffParameterNode_.input();
+        cutoffParameterNode_.setInput(nullptr);
+        break;
+
+    case Parameters::Resonance:
+        node = resonanceParameterNode_.input();
+        resonanceParameterNode_.setInput(nullptr);
+        break;
+
+    case Parameters::Detune:
+        node = detuneParameterNode_.input();
         detuneParameterNode_.setInput(nullptr);
+        break;
     }
+
+    // if (port == 0) {
+ //        node = cutoffParameterNode_.input();
+    // 	cutoffParameterNode_.setInput(nullptr);
+    // }
+    // else if (port == 1) {
+ //        node = resonanceParameterNode_.input();
+    // 	resonanceParameterNode_.setInput(nullptr);
+ //    } else if(port == 2) {
+ //        node = detuneParameterNode_.input();
+ //        detuneParameterNode_.setInput(nullptr);
+ //    }
 
 	return node;
 }
@@ -89,13 +119,13 @@ void LP12FilterNode::processInternal(unsigned frames) {
 
 	// Get the cutoff and resonance buffers (these could be dynamic inputs or static values)
 	const auto cutoff_buffer = std::make_unique<float[]>(frames);
-	memcpy(cutoff_buffer.get(), cutoffParameterNode_.getBuffer(), frames * sizeof(float));
+    memcpy(cutoff_buffer.get(), cutoffParameterNode_.buffer(), frames * sizeof(float));
 
 	const auto resonance_buffer = std::make_unique<float[]>(frames);
-	memcpy(resonance_buffer.get(), resonanceParameterNode_.getBuffer(), frames * sizeof(float));
+    memcpy(resonance_buffer.get(), resonanceParameterNode_.buffer(), frames * sizeof(float));
 
     const auto detune_buffer = std::make_unique<float []>(frames);
-    memcpy(detune_buffer.get(), detuneParameterNode_.getBuffer(), frames * sizeof(float));
+    memcpy(detune_buffer.get(), detuneParameterNode_.buffer(), frames * sizeof(float));
 
 	for(unsigned int i = 0; i < frames; ++i) {
 
@@ -116,7 +146,7 @@ void LP12FilterNode::processInternal(unsigned frames) {
 		}
 
 		// process the sample
-		const float sample = m_input->getBuffer()[i];
+        const float sample = m_input->buffer()[i];
 
 		vibraSpeed_ += (sample - vibraPos_) * c_;
 		vibraPos_ += vibraSpeed_;

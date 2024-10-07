@@ -14,7 +14,7 @@ void AutomationNode::processInternal(const unsigned int frames) {
     if (m_input != nullptr) {
         m_input->process(frames, m_last_processing_id);
 
-        const float* input_buffer = m_input->getBuffer(); // Get the buffer from the input node
+        const float* input_buffer = m_input->buffer(); // Get the buffer from the input node
 
         // Copy the input  buffer into the parameter buffer
         memcpy(m_buffer.get(), input_buffer, frames * sizeof(float));
