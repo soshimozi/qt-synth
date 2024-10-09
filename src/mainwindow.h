@@ -14,7 +14,7 @@
 #include "knobcontrol.h"
 #include "spritesheet.h"
 #include "tooltip.h"
-#include "voice.h"
+#include "voicenode.h"
 
 typedef std::function<void(double, double)> FnChange;
 typedef std::function<QString(double)> FnFormat;
@@ -73,8 +73,6 @@ protected:
 private:
     std::shared_ptr<SpriteSheet> m_spritesheet;
 
-    std::unique_ptr<Voice> m_voices[255] = {};
-
     //std::unique_ptr<AudioPlayer> m_audioPlayer;
     AudioPlayer m_audioPlayer;
     GainNode m_masterGain;
@@ -121,6 +119,10 @@ private:
     int m_keyboardOctaveIndex = 3;
 
     ToolTip m_tooltip;
+
+    //VoiceNode m_voice[16] { VoiceNode };
+
+    std::vector<VoiceNode *> voices_;
 
     // volume sets masterGain in real time.
     // since there is only one masterGain

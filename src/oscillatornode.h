@@ -22,7 +22,6 @@ public:
 public:
     OscillatorNode(wave_shape waveform = wave_shape::sine, float frequency = 0, float detune_cents = 0, float pulse_width = 0.5f, float sample_rate = 44100);
 
-    void processInternal(unsigned int frames) override;
     void setFrequency(float frequency);
     void setWaveform(wave_shape waveform);
     void setPulseWidth(float pulse_width);
@@ -40,6 +39,7 @@ private:
 protected:
     void addAutomation(AudioNode* node, unsigned port) override;
     AudioNode* removeAutomation(unsigned port) override;
+    void processInternal(unsigned int frames) override;
 
 private:
     float generateSample(float phase, float current_pulse_width) const;

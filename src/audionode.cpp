@@ -27,7 +27,7 @@ float* AudioNode::buffer() const
 void AudioNode::ensureBufferSize(const unsigned frames)
 {
     if(m_buffer_size < frames || m_buffer == nullptr)
-	{
+    {
 		m_buffer = std::make_unique<float[]>(frames);
 		m_buffer_size = frames;
 	}

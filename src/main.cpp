@@ -10,8 +10,7 @@
 #include <qapplication.h>
 
 
-int main(int argc, char *argv[])
-{
+int showMainWindow(int argc, char *argv[]) {
     QApplication a(argc, argv);
     MainWindow w;
 
@@ -27,48 +26,62 @@ int main(int argc, char *argv[])
 
     w.show();
     return a.exec();
+}
 
-    // AudioPlayer *m_audioPlayer = new AudioPlayer;
-    // GainNode *m_masterGain = new GainNode(.25);
-    // OscillatorNode *m_Oscillator = new OscillatorNode();
-    // m_Oscillator->setFrequency(440);
-    // m_Oscillator->connect(m_masterGain);
+int showConsole(int argc, char* argv[]) {
+    AudioPlayer *m_audioPlayer = new AudioPlayer;
+    GainNode *m_masterGain = new GainNode(.25);
 
-    // static int last_processing_id = 0;
+    auto voiceNode = VoiceNode::Builder()
+                        .setModFrequency(5)
+                        .setOscillator1Frequency(440)
+                        .setOscillator2Frequency(440 * std::pow(2, -1))
+                        .setOscillator1Gain(.6)
+                        .setOscillator2Gain(.4)
+                        .setOscillator1ModGain(.4)
+                         .setOscillator2ModGain(.1).build();
 
-    // // Set the callback for the audio player
-    // m_audioPlayer->setCallback([m_masterGain](const void* user_data, float* output, unsigned long frames_per_buffer) {
-    //     m_masterGain->process(frames_per_buffer, last_processing_id++);  // Process the signal chain
-    //     float* gainBuffer = m_masterGain->buffer();  // Get the processed buffer
+    voiceNode.connect(m_masterGain);
 
-    //     // Copy the buffer to the output
-    //     for (unsigned long i = 0; i < frames_per_buffer; ++i) {
-    //         output[i * 2] = gainBuffer[i];      // Left channel
-    //         output[i * 2 + 1] = gainBuffer[i];  // Right channel (duplicate for stereo)
-    //     }
-    // });
+    static int last_processing_id = 0;
 
-    // // Initialize and start the audio player
-    // if (!m_audioPlayer->initializeStream()) {
-    //     std::cerr << "Failed to initialize audio stream!";
-    // }
+    // Set the callback for the audio player
+    m_audioPlayer->setCallback([m_masterGain](const void* user_data, float* output, unsigned long frames_per_buffer) {
+        m_masterGain->process(frames_per_buffer, last_processing_id++);  // Process the signal chain
+        float* gainBuffer = m_masterGain->buffer();  // Get the processed buffer
 
-    // if (!m_audioPlayer->start()) {
-    //     std::cerr << "Failed to start audio stream!";
-    // }
+        // Copy the buffer to the output
+        for (unsigned long i = 0; i < frames_per_buffer; ++i) {
+            output[i * 2] = gainBuffer[i];      // Left channel
+            output[i * 2 + 1] = gainBuffer[i];  // Right channel (duplicate for stereo)
+        }
+    });
 
-    // //PressEnterToContinue();
+    // Initialize and start the audio player
+    if (!m_audioPlayer->initializeStream()) {
+        std::cerr << "Failed to initialize audio stream!";
+    }
 
-    // double foo;
-    // std::cout << "Enter a double value: ";
-    // if (std::cin >> foo) {
-    //     std::cout << "You entered: " << foo << std::endl;
-    // } else {
-    //     std::cout << "Invalid input." << std::endl;
-    //     std::cin.clear(); // Clear error state
-    //     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Clear buffer
-    // }
-    // std::cout << "Done!" << std::endl;
+    if (!m_audioPlayer->start()) {
+        std::cerr << "Failed to start audio stream!";
+    }
 
-    // return 0;
+    std::cout << "Note released. Press Enter to quit.\n";
+    std::cin.get();
+
+    return 0;
+
+}
+
+#define USE_WINDOW
+
+int main(int argc, char *argv[])
+{
+
+#ifdef USE_WINDOW
+    return showMainWindow(argc, argv);
+#else
+    return showConsole(argc, argv);
+#endif
+
 }
