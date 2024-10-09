@@ -1,6 +1,5 @@
 ﻿#include "oscillatornode.h"
 
-#include <algorithm>
 #include <cmath>
 #include "definitions.h"
 
@@ -51,39 +50,6 @@ void OscillatorNode::processInternal(const unsigned int frames) {
             m_phase -= TWO_PI;
         }
     }
-
-
-    // ensureBufferSize(frames);
-
-    // frequency_parameter_node_.process(frames, m_last_processing_id);
-    // pulse_width_parameter_node_.process(frames, m_last_processing_id);
-
-    // // Copy frequency and pulse width buffers
-    // const float* frequency_buffer = frequency_parameter_node_.buffer();
-    // const float* pulse_width_buffer = pulse_width_parameter_node_.buffer();
-
-    // // Generate waveform samples using std::transform
-    // float phase = m_phase;
-    // float detune_cents = m_detune_cents;
-    // float sample_rate = m_sample_rate;
-
-    // std::transform(frequency_buffer, frequency_buffer + frames, pulse_width_buffer, m_buffer.get(),
-    //                [this, phase, detune_cents, sample_rate](float current_freq, float current_pulse_width) mutable {
-    //                    // Apply detune
-    //                    float detuned_freq = current_freq * std::pow(2.0f, detune_cents / 1200.0f);
-
-    //                    // Update phase
-    //                    float phase_increment = TWO_PI * detuned_freq / sample_rate;
-    //                    phase += phase_increment;
-    //                    if (phase >= TWO_PI) {
-    //                        phase -= TWO_PI;
-    //                    }
-
-    //                    // Generate sample based on waveform type
-    //                    return generateSample(phase, current_pulse_width);
-    //                });
-
-    // m_phase = phase;
 }
 
 float OscillatorNode::generateSample(const float phase, const float current_pulse_width) const

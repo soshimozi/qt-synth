@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "blackkey.h"
+#include "definitions.h"
 #include "whitekey.h"
 #include "spritesheet.h"
 #include "knobcontrol.h"
@@ -642,6 +643,11 @@ void MainWindow::noteOn(int noteIndex) {
 
     qDebug() << "NoteOn => Note Index: " << noteIndex;
     qDebug() << "Frequency: " << 440.0 * std::pow(2.0, (noteIndex - 69) / 12.0);
+
+    // TODO: find an empty voice slot
+    // initialize that voice with current parameters
+    // call noteOn for that voice
+    // if there are no empty slots, note steal from first slot
 }
 
 void MainWindow::noteOff(int noteIndex) {
@@ -650,9 +656,16 @@ void MainWindow::noteOff(int noteIndex) {
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , m_masterGain(0.0)
-    , m_playing(false)
+    , m_audioPlayer(nullptr, SAMPLE_RATE, 512)
+    , m_masterGain(0.5)
+    , m_playing(false) /*, m_voice(wave_shape::sine, wave_shape::sine, wave_shape::sine, 4, .1, .1, 440, 232.24, .5, .5, 0, 0)*/
 {
+
+    for(uint i = 0; i < 32; i++) {
+        voices_.push_back(new VoiceNode());
+    }
+
+    //m_voice.connect(&m_masterGain);
 
     m_spritesheet = std::make_shared<SpriteSheet>();
     m_spritesheet->setOrientation(Qt::Vertical);
@@ -665,9 +678,35 @@ MainWindow::MainWindow(QWidget *parent)
 
     }
 
+    auto voice = voices_.begin();
+
+    (*voice)->setParameters(VoiceNode::Builder()
+                              .setModFrequency(5)
+                              .setOscillator1Frequency(440)
+                              .setOscillator2Frequency(440 * std::pow(2, -1))
+                              .setOscillator1Gain(.6)
+                              .setOscillator2Gain(.4)
+                              .setOscillator1ModGain(.4)
+                              .setOscillator2ModGain(.1).parameters());
+
+    // m_voice.setParameters(VoiceNode::Builder()
+    //                           .setModFrequency(5)
+    //                           .setOscillator1Frequency(440)
+    //                           .setOscillator2Frequency(440 * std::pow(2, -1))
+    //                           .setOscillator1Gain(.6)
+    //                           .setOscillator2Gain(.4)
+    //                           .setOscillator1ModGain(.4)
+    //                           .setOscillator2ModGain(.1).parameters());
+
+    (*voice)->connect(&m_masterGain);
+
+    static int sample_count = 0;
 
     // Set the callback for the audio player
     m_audioPlayer.setCallback([this](const void* user_data, float* output, unsigned long frames_per_buffer) {
+
+        sample_count += frames_per_buffer;
+
         m_masterGain.process(frames_per_buffer, last_processing_id++);  // Process the signal chain
         float* gainBuffer = m_masterGain.buffer();  // Get the processed buffer
 
@@ -675,6 +714,11 @@ MainWindow::MainWindow(QWidget *parent)
         for (unsigned long i = 0; i < frames_per_buffer; ++i) {
             output[i * 2] = gainBuffer[i];      // Left channel
             output[i * 2 + 1] = gainBuffer[i];  // Right channel (duplicate for stereo)
+        }
+
+        if(sample_count > 88200) {
+            auto voice = voices_.begin();
+            (*voice)->setParameters(VoiceNode::Builder().parameters());
         }
     });
 
