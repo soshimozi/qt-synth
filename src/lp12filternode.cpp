@@ -105,17 +105,17 @@ void LP12FilterNode::calculateCoefficients(float cutoff, float resonance, float 
 void LP12FilterNode::processInternal(unsigned frames) {
 	ensureBufferSize(frames);
 
-	if (m_input == nullptr) {
-		memset(m_buffer.get(), 0, frames * sizeof(float));
+	if (input_ == nullptr) {
+		memset(buffer_.get(), 0, frames * sizeof(float));
 		return;
 	}
 
-	m_input->process(frames, m_last_processing_id);
+	input_->process(frames, last_processing_id_);
 
 	// process the parameter nodes
-	cutoffParameterNode_.process(frames, m_last_processing_id);
-	resonanceParameterNode_.process(frames, m_last_processing_id);
-    detuneParameterNode_.process(frames, m_last_processing_id);
+	cutoffParameterNode_.process(frames, last_processing_id_);
+	resonanceParameterNode_.process(frames, last_processing_id_);
+    detuneParameterNode_.process(frames, last_processing_id_);
 
 	// Get the cutoff and resonance buffers (these could be dynamic inputs or static values)
 	const auto cutoff_buffer = std::make_unique<float[]>(frames);
@@ -146,13 +146,13 @@ void LP12FilterNode::processInternal(unsigned frames) {
 		}
 
 		// process the sample
-        const float sample = m_input->buffer()[i];
+        const float sample = input_->buffer()[i];
 
 		vibraSpeed_ += (sample - vibraPos_) * c_;
 		vibraPos_ += vibraSpeed_;
 
 		vibraSpeed_ *= r_;
-		m_buffer[i] = vibraPos_;
+		buffer_[i] = vibraPos_;
 	}
 
 

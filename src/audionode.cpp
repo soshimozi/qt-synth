@@ -1,35 +1,35 @@
 ﻿#include "audionode.h"
 
-AudioNode::AudioNode() : m_input(nullptr), m_buffer(nullptr), m_buffer_size(0) {
+AudioNode::AudioNode() : input_(nullptr), buffer_(nullptr), buffer_size_(0) {
 }
 
 void AudioNode::setInput(AudioNode *node) {
-    m_input = node;
+    input_ = node;
 }
 
 void AudioNode::process(const unsigned frames, const unsigned processing_id)
 {
-	if (m_last_processing_id == processing_id)
+	if (last_processing_id_ == processing_id)
 	{
 		// node has already been processed this cycle; skip
 		return;
 	}
 
-    m_last_processing_id = processing_id;
+    last_processing_id_ = processing_id;
 	processInternal(frames);
 }
 
 float* AudioNode::buffer() const
 {
-	return m_buffer.get();
+	return buffer_.get();
 }
 
 void AudioNode::ensureBufferSize(const unsigned frames)
 {
-    if(m_buffer_size < frames || m_buffer == nullptr)
+    if(buffer_size_ < frames || buffer_ == nullptr)
     {
-		m_buffer = std::make_unique<float[]>(frames);
-		m_buffer_size = frames;
+		buffer_ = std::make_unique<float[]>(frames);
+		buffer_size_ = frames;
 	}
 }
 

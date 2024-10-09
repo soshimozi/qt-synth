@@ -11,18 +11,18 @@ void AutomationNode::processInternal(const unsigned int frames) {
     ensureBufferSize(frames);
 
 
-    if (m_input != nullptr) {
-        m_input->process(frames, m_last_processing_id);
+    if (input_ != nullptr) {
+        input_->process(frames, last_processing_id_);
 
-        const float* input_buffer = m_input->buffer(); // Get the buffer from the input node
+        const float* input_buffer = input_->buffer(); // Get the buffer from the input node
 
         // Copy the input  buffer into the parameter buffer
-        memcpy(m_buffer.get(), input_buffer, frames * sizeof(float));
+        memcpy(buffer_.get(), input_buffer, frames * sizeof(float));
     }
     else {
 
         for (unsigned int i = 0; i < frames; ++i) {
-            m_buffer[i] = static_value_;
+            buffer_[i] = static_value_;
         }
     }
 }

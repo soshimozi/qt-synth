@@ -7,6 +7,12 @@ class ADSREnvelope : public EnvelopeNode
 {
 public:
     ADSREnvelope();
+
+private:
+    float attack_;
+    float decay_;
+    float sustain_;
+    float release_;
 };
 
 #endif // ADSRENVELOPE_H

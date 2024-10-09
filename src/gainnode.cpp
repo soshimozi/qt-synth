@@ -2,10 +2,10 @@
 
 #include <cstring>
 
-GainNode::GainNode(const float gain) : gain_mod_node_(0), m_gain(gain) {}
+GainNode::GainNode(const float gain) : gain_mod_node_(0), gain_(gain) {}
 
 void GainNode::setGain(const float gain) {
-    m_gain = gain;
+    gain_ = gain;
 }
 
 void GainNode::addAutomation(AudioNode* node, unsigned port) {
@@ -29,25 +29,25 @@ AudioNode* GainNode::removeAutomation(unsigned port) {
 void GainNode::processInternal(const unsigned frames) {
 	ensureBufferSize(frames);
 
-    gain_mod_node_.process(frames, m_last_processing_id);
+    gain_mod_node_.process(frames, last_processing_id_);
 
-	if(m_input == nullptr) {
-		memset(m_buffer.get(), 0, frames * sizeof(float));
+	if(input_ == nullptr) {
+		memset(buffer_.get(), 0, frames * sizeof(float));
 		return;
 	}
 
-	m_input->process(frames, m_last_processing_id);
+	input_->process(frames, last_processing_id_);
 
-	const float* input_buffer = m_input->buffer();
+	const float* input_buffer = input_->buffer();
     const float* gain_mod_buffer = gain_mod_node_.buffer();
 
-    if(m_gain == 0) {
-        memset(m_buffer.get(), 0, frames * sizeof(float));
+    if(gain_ == 0) {
+        memset(buffer_.get(), 0, frames * sizeof(float));
         return;
     }
 
 	for(unsigned int i = 0; i < frames; i++) {
-        m_buffer[i] = input_buffer[i] * (m_gain + gain_mod_buffer[i]);
+        buffer_[i] = input_buffer[i] * (gain_ + gain_mod_buffer[i]);
 	}
 }
 

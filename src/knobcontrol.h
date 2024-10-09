@@ -11,22 +11,21 @@ public:
     explicit KnobControl(QWidget *parent = nullptr);
 
     void setMinimum(double minimum);
-    double minimum() const { return m_minimum; }
+    double minimum() const { return minimum_value_; }
 
     void setMaximum(double maximum);
-    double maximum() const { return m_maximum; }
+    double maximum() const { return maximum_value_; }
 
     void setValue(double value);
-    double value() const { return m_value; }
+    double value() const { return current_value_; }
 
     void setSpriteSheet(std::shared_ptr<SpriteSheet> spritesheet);
-    SpriteSheet* spriteSheet() const { return m_spriteSheet.get(); }
+    SpriteSheet* spriteSheet() const { return _spritesheet.get(); }
 
     QPoint centerPoint() const;
 
 signals:
     void knobChanged(double oldValue, double newValue);
-
     void hoverEntered();
     void hoverLeft();
 
@@ -38,19 +37,20 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
     void enterEvent(QEnterEvent *event) override;
     void leaveEvent(QEvent *event) override;
-    //void mouseEnterEvent(QEvent *event()) override;
 
 private:
-    bool m_isDragging;
-    QPoint m_lastMousePosition;
-
-    double m_minimum;
-    double m_maximum;
-    double m_value;
-
-    std::shared_ptr<SpriteSheet> m_spriteSheet;
-
     void updateImage();
+
+private:
+    bool dragging_;
+    QPoint last_mouse_position_;
+
+    double minimum_value_;
+    double maximum_value_;
+    double current_value_;
+
+    std::shared_ptr<SpriteSheet> _spritesheet;
+
 };
 
 #endif // KNOBCONTROL_H

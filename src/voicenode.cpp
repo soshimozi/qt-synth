@@ -3,9 +3,9 @@
 
 
 VoiceNode::VoiceNode(const VoiceParameters& parameters)
-    : m_oscillator_gain1(0), m_oscillator_gain2(0),
-    m_mod_oscillator_gain1(0), m_mod_oscillator_gain2(0),
-    m_mixer_node(2) {
+    : oscillator_gain_1_(0), oscillator_gain_2_(0),
+    mod_oscillator_gain_1_(0), mod_oscillator_gain_2_(0),
+    mixer_node_(2) {
 
     setParameters(parameters);
     buildDeviceChain();
@@ -23,9 +23,9 @@ VoiceNode::VoiceNode(const VoiceParameters& parameters)
     //                  oscillator_2_detune);
 }
 
-VoiceNode::VoiceNode() :  m_oscillator_gain1(0), m_oscillator_gain2(0),
-    m_mod_oscillator_gain1(0), m_mod_oscillator_gain2(0),
-    m_mixer_node(2) {
+VoiceNode::VoiceNode() :  oscillator_gain_1_(0), oscillator_gain_2_(0),
+    mod_oscillator_gain_1_(0), mod_oscillator_gain_2_(0),
+    mixer_node_(2) {
 
     buildDeviceChain();
 }
@@ -53,83 +53,83 @@ void VoiceNode::setParameters(const VoiceParameters& parameters) {
 
 void VoiceNode::buildDeviceChain() {
 
-    m_mod_oscillator.connect(&m_mod_oscillator_gain1);
-    m_mod_oscillator.connect(&m_mod_oscillator_gain2);
+    mod_oscillator_.connect(&mod_oscillator_gain_1_);
+    mod_oscillator_.connect(&mod_oscillator_gain_2_);
 
-    m_mod_oscillator_gain1.automate(&m_oscillator_gain1, GainNode::Parameters::GainModulation);
-    m_mod_oscillator_gain2.automate(&m_oscillator_gain2, GainNode::Parameters::GainModulation);
+    mod_oscillator_gain_1_.automate(&oscillator_gain_1_, GainNode::Parameters::GainModulation);
+    mod_oscillator_gain_2_.automate(&oscillator_gain_2_, GainNode::Parameters::GainModulation);
 
-    m_oscillator1.connect(&m_oscillator_gain1);
-    m_oscillator2.connect(&m_oscillator_gain2);
+    oscillator_1_.connect(&oscillator_gain_1_);
+    oscillator_2_.connect(&oscillator_gain_2_);
 
-    m_mixer_node.addMix(&m_oscillator_gain1, 0);
-    m_mixer_node.addMix(&m_oscillator_gain2, 1);
+    mixer_node_.addMix(&oscillator_gain_1_, 0);
+    mixer_node_.addMix(&oscillator_gain_2_, 1);
 
     // mixer is 100% for each channel, the oscillator gain will set the
     // the actual signal going into the output node.
-    m_mixer_node.setGain(0, 1.0);
-    m_mixer_node.setGain(1, 1.0);
+    mixer_node_.setGain(0, 1.0);
+    mixer_node_.setGain(1, 1.0);
 }
 
 void VoiceNode::updateOscillator1Detune(float detune) {
-    m_oscillator1.setDetune(detune);
+    oscillator_1_.setDetune(detune);
 }
 
 void VoiceNode::updateOscillator2Detune(float detune) {
-    m_oscillator2.setDetune(detune);
+    oscillator_2_.setDetune(detune);
 }
 
 
 void VoiceNode::setModWaveform(wave_shape waveform) {
-    m_mod_oscillator.setWaveform(waveform);
+    mod_oscillator_.setWaveform(waveform);
 }
 
 void VoiceNode::setOscillator1Waveform(wave_shape waveform) {
-    m_oscillator1.setWaveform(waveform);
+    oscillator_1_.setWaveform(waveform);
 }
 
 void VoiceNode::setOscillator2Waveform(wave_shape waveform) {
-    m_oscillator2.setWaveform(waveform);
+    oscillator_2_.setWaveform(waveform);
 }
 
 void VoiceNode::updateModFrequency(float frequency) {
-    m_mod_oscillator.setFrequency(frequency);
+    mod_oscillator_.setFrequency(frequency);
 }
 
 void VoiceNode::updateModOscillator1Gain(float gain) {
-    m_mod_oscillator_gain1.setGain(gain);
+    mod_oscillator_gain_1_.setGain(gain);
 }
 
 void VoiceNode::updateModOscillator2Gain(float gain) {
-    m_mod_oscillator_gain2.setGain(gain);
+    mod_oscillator_gain_2_.setGain(gain);
 }
 
 void VoiceNode::updateOscillator1Frequency(float frequency) {
-    m_oscillator1.setFrequency(frequency);
+    oscillator_1_.setFrequency(frequency);
 }
 
 void VoiceNode::updateOscillator2Frequency(float frequency) {
-    m_oscillator2.setFrequency(frequency);
+    oscillator_2_.setFrequency(frequency);
 }
 
 void VoiceNode::updateOscillator1Gain(float gain) {
-    m_oscillator_gain1.setGain(gain);
+    oscillator_gain_1_.setGain(gain);
 }
 
 void VoiceNode::updateOscillator2Gain(float gain) {
-    m_oscillator_gain2.setGain(gain);
+    oscillator_gain_2_.setGain(gain);
 }
 
 
 void VoiceNode::processInternal(const unsigned frames) {
     ensureBufferSize(frames);
 
-    m_mixer_node.process(frames, m_last_processing_id);
+    mixer_node_.process(frames, last_processing_id_);
 
-    const float* input_buffer = m_mixer_node.buffer();
+    const float* input_buffer = mixer_node_.buffer();
 
     for(unsigned int i = 0; i < frames; i++) {
-        m_buffer[i] = input_buffer[i];
+        buffer_[i] = input_buffer[i];
     }
 }
 

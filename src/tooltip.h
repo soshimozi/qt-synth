@@ -17,8 +17,8 @@ signals:
     void tooltipHidden();
 
 private:
-    QLabel *m_label;
-    QPropertyAnimation *m_animation;
+    QLabel *label_;
+    QPropertyAnimation *animation_;
 
     void fadeOut();
 };

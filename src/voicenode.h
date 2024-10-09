@@ -179,14 +179,14 @@ private:
     //                       float oscillator_1_detune,
     //                       float oscillator_2_detune);
 private:
-    OscillatorNode m_oscillator1;
-    OscillatorNode m_oscillator2;
-    OscillatorNode m_mod_oscillator;
-    GainNode m_oscillator_gain1;
-    GainNode m_oscillator_gain2;
-    GainNode m_mod_oscillator_gain1;
-    GainNode m_mod_oscillator_gain2;
-    MixerNode m_mixer_node;
+    OscillatorNode oscillator_1_;
+    OscillatorNode oscillator_2_;
+    OscillatorNode mod_oscillator_;
+    GainNode oscillator_gain_1_;
+    GainNode oscillator_gain_2_;
+    GainNode mod_oscillator_gain_1_;
+    GainNode mod_oscillator_gain_2_;
+    MixerNode mixer_node_;
 
     bool note_on_ = false;
 };

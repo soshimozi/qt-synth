@@ -28,10 +28,10 @@ public:
     void setDetune(float detune);
 
 private:
-    wave_shape m_waveform;
-    float m_phase;
-    float m_detune_cents;
-    float m_sample_rate;
+    wave_shape waveform_;
+    float phase_;
+    float detune_cents_;
+    float sample_rate_;
 
     AutomationNode frequency_parameter_node_;
     AutomationNode pulse_width_parameter_node_;

@@ -31,11 +31,11 @@ protected:
     AudioNode * removeAutomation(unsigned int port = 0) override;
 
 private:
-    double m_gate_value;
-    std::vector<float> m_levels;
-    std::vector<float> m_times;
-    int m_release_stage;
-    std::function<void()> m_on_complete;
+    double gate_value_;
+    std::vector<float> levels_;
+    std::vector<float> times_;
+    int release_stage_;
+    std::function<void()> on_complete_;
 };
 
 #endif // ENVELOPENODE_H

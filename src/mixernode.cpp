@@ -32,18 +32,18 @@ AudioNode* MixerNode::removeInput(unsigned int index)
 void MixerNode::processInternal(unsigned frames) {
 	ensureBufferSize(frames);
 
-	std::fill(m_buffer.get(), m_buffer.get() + frames, 0.0f);
+	std::fill(buffer_.get(), buffer_.get() + frames, 0.0f);
 
 	for(size_t i = 0; i < inputs_.size(); ++i) {
 		if (inputs_[i] != nullptr) {
 
-			inputs_[i]->process(frames, m_last_processing_id);
+			inputs_[i]->process(frames, last_processing_id_);
 
 			const float* input_buffer = inputs_[i]->buffer();
 
 			// Add the input to the mix buffer with the corresponding gain
 			for(unsigned int j = 0; j < frames; ++j) {
-				m_buffer[j] += input_buffer[j] * gains_[i];
+				buffer_[j] += input_buffer[j] * gains_[i];
 			}
 		
 		}

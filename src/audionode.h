@@ -19,7 +19,7 @@ public:
 	void process(unsigned int frames, unsigned int processing_id);
 
     void setInput(AudioNode* node);
-    AudioNode* input() const { return m_input; }
+    AudioNode* input() const { return input_; }
 
     float* buffer() const;
 
@@ -34,12 +34,12 @@ public:
     void connect(AudioNode *node) { node->setInput(this); }
 
 protected:
-    AudioNode* m_input;
+    AudioNode* input_;
 
-    std::unique_ptr<float[]> m_buffer;
+    std::unique_ptr<float[]> buffer_;
 
-    unsigned int m_buffer_size = 0;
-    unsigned int m_last_processing_id = -1;
+    unsigned int buffer_size_ = 0;
+    unsigned int last_processing_id_ = -1;
 
 protected:
     virtual void processInternal(unsigned int frames) = 0;

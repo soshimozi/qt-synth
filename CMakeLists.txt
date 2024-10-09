@@ -37,7 +37,7 @@ set(PROJECT_SOURCES
     src/envelopenode.h src/envelopenode.cpp
     src/audioplayer.cpp src/audioplayer.h
     src/voicenode.h src/voicenode.cpp
-
+    src/buffernode.h src/buffernode.cpp
 )
 
 set(PROJECT_RESOURCES
@@ -49,7 +49,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
-        src/adsrenvelope.h src/adsrenvelope.cpp
     )
 
 # Define target properties for Android with Qt 6 as:

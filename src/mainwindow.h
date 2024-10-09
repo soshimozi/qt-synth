@@ -25,7 +25,7 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    ~MainWindow() { m_audioPlayer.stop(); }
+    ~MainWindow() { audio_player_.stop(); }
 
 
 protected:
@@ -71,54 +71,54 @@ protected:
     void showKnobTooltip(const KnobControl* knob, int decimalPlaces = 0, bool logarithmic = false, bool useFormatter = false, QString suffix = "");
 
 private:
-    std::shared_ptr<SpriteSheet> m_spritesheet;
+    std::shared_ptr<SpriteSheet> spritesheet_;
 
-    //std::unique_ptr<AudioPlayer> m_audioPlayer;
-    AudioPlayer m_audioPlayer;
-    GainNode m_masterGain;
-    bool m_playing;
+    //std::unique_ptr<AudioPlayer> audio_player_;
+    AudioPlayer audio_player_;
+    GainNode output_node_;
+    bool playing_;
 
     // values for new voices
-    double m_modFrequency = 2.1;
-    int m_modShapeIndex = 0;
+    double mod_frequency_ = 2.1;
+    wave_shape mod_waveform_ = wave_shape::sine;
 
-    double m_osc1ModMix = 15;
-    double m_osc2ModMix = 17;
+    double osc_1_mod_mix_ = 15;
+    double osc_2_mod_mix_ = 17;
 
-    int m_osc1WaveformIndex = 2;
-    int m_osc2WaveformIndex = 2;
+    wave_shape osc_1_waveform_ = wave_shape::sine;
+    wave_shape osc_2_waveform_ = wave_shape::sine;
 
-    double m_osc1Detune = 0;
-    double m_osc2Detune = 0;
+    double osc_1_detune_ = 0;
+    double osc_2_detune_ = 0;
 
-    int m_osc1IntervalIndex = 0;
-    int m_osc2IntervalIndex = 0;
+    int osc_1_interval_ = 0;
+    int osc_2_interval_ = 0;
 
-    double m_osc1Mix = 50;
-    double m_osc2Mix = 50;
+    double osc_1_mix_ = 50;
+    double osc_2_mix_ = 50;
 
-    double m_filterCutoff = 8;
-    double m_filterQ = 7.0;
-    double m_filterMod = 21;
-    double m_filterEnv = 56;
+    double filter_cutoff_ = 8;
+    double filter_resonance_ = 7.0;
+    double filter_mod_ = 21;
+    double filter_envelope_ = 56;
 
-    double m_filterEnvelopeA = 5;
-    double m_filterEnvelopeD = 6;
-    double m_filterEnvelopeS = 5;
-    double m_filterEnvelopeR = 7;
+    double filter_envelope_a_ = 5;
+    double filter_envelope_d_ = 6;
+    double filter_envelope_s_ = 5;
+    double filter_envelope_r_ = 7;
 
-    double m_volumeEnvelopeA = 2;
-    double m_volumeEnvelopeD = 15;
-    double m_volumeEnvelopeS = 68;
-    double m_volumeEnvelopeR = 5;
+    double volume_envelope_a_ = 2;
+    double volume_envelope_d_ = 15;
+    double volume_envelope_s_ = 68;
+    double volume_envelope_r_ = 5;
 
-    double m_overdrive = 38;
-    double m_reverb = 32;
-    double m_volume = 75;
+    double overdrive_ = 38;
+    double reverb_ = 32;
+    double volume_ = 75;
 
-    int m_keyboardOctaveIndex = 3;
+    int keyboard_octave_offset_ = 3;
 
-    ToolTip m_tooltip;
+    ToolTip knob_tooltip_;
 
     //VoiceNode m_voice[16] { VoiceNode };
 

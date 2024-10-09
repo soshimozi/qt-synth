@@ -17,7 +17,7 @@ public:
 
 private:
     AutomationNode gain_mod_node_;
-    float m_gain;
+    float gain_;
 
 protected:
     void addAutomation(AudioNode* node, unsigned port) override;
