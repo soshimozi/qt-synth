@@ -38,6 +38,7 @@ set(PROJECT_SOURCES
     src/audioplayer.cpp src/audioplayer.h
     src/voicenode.h src/voicenode.cpp
     src/buffernode.h src/buffernode.cpp
+    src/adsrnode.h src/adsrnode.cpp
 )
 
 set(PROJECT_RESOURCES

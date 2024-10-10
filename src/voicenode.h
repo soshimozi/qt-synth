@@ -2,6 +2,7 @@
 #define VOICENODE_H
 
 #include "audionode.h"
+#include "buffernode.h"
 #include "gainnode.h"
 #include "lp12filternode.h"
 #include "mixernode.h"
@@ -186,7 +187,8 @@ private:
     GainNode oscillator_gain_2_;
     GainNode mod_oscillator_gain_1_;
     GainNode mod_oscillator_gain_2_;
-    MixerNode mixer_node_;
+    //MixerNode mixer_node_;
+    BufferNode output_buffer_;
 
     bool note_on_ = false;
 };

@@ -2,30 +2,13 @@
 #include <cstring>
 
 
-VoiceNode::VoiceNode(const VoiceParameters& parameters)
-    : oscillator_gain_1_(0), oscillator_gain_2_(0),
-    mod_oscillator_gain_1_(0), mod_oscillator_gain_2_(0),
-    mixer_node_(2) {
+VoiceNode::VoiceNode(const VoiceParameters& parameters) {
 
     setParameters(parameters);
     buildDeviceChain();
-    // buildEffectChain(mod_waveform,
-    //                  oscillator_1_waveform,
-    //                  oscillator_2_waveform,
-    //                  mod_frequency,
-    //                  oscillator_1_mod_gain,
-    //                  oscillator_2_mod_gain,
-    //                  oscillator_1_frequency,
-    //                  oscillator_2_frequency,
-    //                  oscillator_1_gain,
-    //                  oscillator_2_gain,
-    //                  oscillator_1_detune,
-    //                  oscillator_2_detune);
 }
 
-VoiceNode::VoiceNode() :  oscillator_gain_1_(0), oscillator_gain_2_(0),
-    mod_oscillator_gain_1_(0), mod_oscillator_gain_2_(0),
-    mixer_node_(2) {
+VoiceNode::VoiceNode() {
 
     buildDeviceChain();
 }
@@ -62,13 +45,8 @@ void VoiceNode::buildDeviceChain() {
     oscillator_1_.connect(&oscillator_gain_1_);
     oscillator_2_.connect(&oscillator_gain_2_);
 
-    mixer_node_.addMix(&oscillator_gain_1_, 0);
-    mixer_node_.addMix(&oscillator_gain_2_, 1);
-
-    // mixer is 100% for each channel, the oscillator gain will set the
-    // the actual signal going into the output node.
-    mixer_node_.setGain(0, 1.0);
-    mixer_node_.setGain(1, 1.0);
+    output_buffer_.addInput(&oscillator_gain_1_, 1.0);
+    output_buffer_.addInput(&oscillator_gain_2_, 1.0);
 }
 
 void VoiceNode::updateOscillator1Detune(float detune) {
@@ -124,9 +102,10 @@ void VoiceNode::updateOscillator2Gain(float gain) {
 void VoiceNode::processInternal(const unsigned frames) {
     ensureBufferSize(frames);
 
-    mixer_node_.process(frames, last_processing_id_);
+    output_buffer_.process(frames, last_processing_id_);
+    //mixer_node_.process(frames, last_processing_id_);
 
-    const float* input_buffer = mixer_node_.buffer();
+    const float* input_buffer = output_buffer_.buffer();
 
     for(unsigned int i = 0; i < frames; i++) {
         buffer_[i] = input_buffer[i];

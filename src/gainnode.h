@@ -10,7 +10,7 @@ public:
     };
 
 public:
-	explicit GainNode(float gain);
+    explicit GainNode(float gain = 1.0);
 
 	void processInternal(unsigned frames) override;
 	void setGain(float gain);
