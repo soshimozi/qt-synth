@@ -1,7 +1,7 @@
 ﻿#include "audionode.h"
+#include "audiocontext.h"
 
-AudioNode::AudioNode() : input_(nullptr), buffer_(nullptr), buffer_size_(0) {
-}
+AudioNode::AudioNode(AudioContext &context) : input_(nullptr), buffer_(nullptr), buffer_size_(0), context_(context) {}
 
 void AudioNode::setInput(AudioNode *node) {
     input_ = node;
@@ -16,6 +16,8 @@ void AudioNode::process(const unsigned frames, const unsigned processing_id)
 	}
 
     last_processing_id_ = processing_id;
+
+    ensureBufferSize(frames);
 	processInternal(frames);
 }
 

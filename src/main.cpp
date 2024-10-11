@@ -29,17 +29,19 @@ int showMainWindow(int argc, char *argv[]) {
 }
 
 int showConsole(int argc, char* argv[]) {
-    AudioPlayer *m_audioPlayer = new AudioPlayer;
-    GainNode *m_masterGain = new GainNode(.25);
+    AudioContext context(SAMPLE_RATE);
 
-    auto voiceNode = VoiceNode::Builder()
+    AudioPlayer *m_audioPlayer = new AudioPlayer;
+    GainNode *m_masterGain = new GainNode(context, .25);
+
+    auto voiceNode = VoiceNode::Builder(context)
                         .setModFrequency(5)
                         .setOscillator1Frequency(440)
                         .setOscillator2Frequency(440 * std::pow(2, -1))
                         .setOscillator1Gain(.6)
                         .setOscillator2Gain(.4)
                         .setOscillator1ModGain(.4)
-                         .setOscillator2ModGain(.1).build();
+                        .setOscillator2ModGain(.1).build();
 
     voiceNode.connect(m_masterGain);
 

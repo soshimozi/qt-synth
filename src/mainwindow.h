@@ -10,6 +10,7 @@
 
 //#include "audioplayer.h"
 #include "audioplayer.h"
+#include "definitions.h"
 #include "gainnode.h"
 #include "knobcontrol.h"
 #include "spritesheet.h"
@@ -127,6 +128,8 @@ private:
     // volume sets masterGain in real time.
     // since there is only one masterGain
     // at any time we don't need to cache the value
+
+    AudioContext audio_context_;
 
 };
 #endif // MAINWINDOW_H

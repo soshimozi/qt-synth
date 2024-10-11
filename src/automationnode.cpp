@@ -2,14 +2,12 @@
 
 #include <cstring>
 
-AutomationNode::AutomationNode(const float initial_value) : static_value_(initial_value) {}
+AutomationNode::AutomationNode(AudioContext& context, const float initial_value) : AudioNode(context), static_value_(initial_value) {}
 
 float AutomationNode::getStaticValue() const { return static_value_; }
 void AutomationNode::setStaticValue(const float value) { static_value_ = value; }
 
 void AutomationNode::processInternal(const unsigned int frames) {
-    ensureBufferSize(frames);
-
 
     if (input_ != nullptr) {
         input_->process(frames, last_processing_id_);

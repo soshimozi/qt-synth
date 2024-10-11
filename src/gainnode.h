@@ -6,21 +6,20 @@ class GainNode : public AudioNode
 {
 public:
     enum class Parameters {
-        GainModulation = 0,
+        Gain = 0
     };
 
 public:
-    explicit GainNode(float gain = 1.0);
+    explicit GainNode(AudioContext& context, float gain = 1.0);
 
 	void processInternal(unsigned frames) override;
-	void setGain(float gain);
-
-private:
-    AutomationNode gain_mod_node_;
-    float gain_;
+    void setGain(float gain) { gain_automation_.setStaticValue(gain); }
 
 protected:
     void addAutomation(AudioNode* node, unsigned port) override;
     AudioNode* removeAutomation(unsigned port) override;
+
+private:
+    AutomationNode gain_automation_;
 
 };

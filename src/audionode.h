@@ -1,11 +1,12 @@
 ﻿#pragma once
 
+#include "audiocontext.h"
 #include <memory>
 
 class AudioNode {
 
 public:
-	explicit AudioNode();
+    explicit AudioNode(AudioContext& context);
 	virtual ~AudioNode() = default;
 
 	// don't need copy
@@ -35,6 +36,7 @@ public:
 
 protected:
     AudioNode* input_;
+    AudioContext& context_;  // Reference to shared context
 
     std::unique_ptr<float[]> buffer_;
 
@@ -47,6 +49,7 @@ protected:
     virtual void addAutomation(AudioNode* node, unsigned int port = 0) = 0;
     virtual AudioNode * removeAutomation(unsigned int port = 0) = 0;
 
+private:
 	void ensureBufferSize(unsigned int frames);
 
 };

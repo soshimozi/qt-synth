@@ -2,7 +2,6 @@
 #include <algorithm>
 
 void BufferNode::processInternal(unsigned frames) {
-    ensureBufferSize(frames);
 
     // Zero the output buffer
     std::fill_n(buffer_.get(), frames, 0.0f);

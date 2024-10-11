@@ -657,12 +657,13 @@ void MainWindow::noteOff(int noteIndex) {
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , audio_player_(nullptr, SAMPLE_RATE, 512)
-    , output_node_(0.5)
+    , audio_context_(SAMPLE_RATE)
+    , output_node_(audio_context_, 0.5)
     , playing_(false) /*, m_voice(wave_shape::sine, wave_shape::sine, wave_shape::sine, 4, .1, .1, 440, 232.24, .5, .5, 0, 0)*/
 {
 
     for(uint i = 0; i < 32; i++) {
-        voices_.push_back(new VoiceNode());
+        voices_.push_back(new VoiceNode(audio_context_));
     }
 
     //m_voice.connect(&m_masterGain);
@@ -680,14 +681,19 @@ MainWindow::MainWindow(QWidget *parent)
 
     auto voice = voices_.begin();
 
-    (*voice)->setParameters(VoiceNode::Builder()
+    (*voice)->setParameters(VoiceNode::Builder(audio_context_)
                               .setModFrequency(5)
                               .setOscillator1Frequency(440)
                               .setOscillator2Frequency(440 * std::pow(2, -1))
                               .setOscillator1Gain(.6)
                               .setOscillator2Gain(.4)
                               .setOscillator1ModGain(.4)
-                              .setOscillator2ModGain(.1).parameters());
+                              .setOscillator2ModGain(.1)
+                              .setVolumeEnvelopeA(1.2)
+                              .setVolumeEnvelopeD(.5)
+                              .setVolumeEnvelopeS(.75)
+                              .setVolumeEnvelopeR(.2)
+                              .parameters());
 
     // m_voice.setParameters(VoiceNode::Builder()
     //                           .setModFrequency(5)
@@ -716,10 +722,10 @@ MainWindow::MainWindow(QWidget *parent)
             output[i * 2 + 1] = gainBuffer[i];  // Right channel (duplicate for stereo)
         }
 
-        if(sample_count > 88200) {
-            auto voice = voices_.begin();
-            (*voice)->setParameters(VoiceNode::Builder().parameters());
-        }
+        // if(sample_count > 88200) {
+        //     auto voice = voices_.begin();
+        //     (*voice)->setParameters(VoiceNode::Builder().parameters());
+        // }
     });
 
     // Initialize and start the audio player

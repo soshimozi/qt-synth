@@ -12,11 +12,11 @@ public:
     };
 
 public:
-    LP12FilterNode(float initial_cutoff = 20000.0f, float initial_resonance = 1.0f, float initial_detune = 0.0f, float sample_rate = 44100);
+    LP12FilterNode(AudioContext& context, float initial_cutoff = 20000.0f, float initial_resonance = 1.0f, float initial_detune = 0.0f);
 
-	void setCutoff(float cutoff);
-	void setResonance(float resonance);
-    void setDetune(float detune);
+    inline void setCutoff(float cutoff) { cutoff_automation_.setStaticValue(cutoff); };
+    inline void setResonance(float resonance) { resonance_automation_.setStaticValue(resonance); }
+    inline void setDetune(float detune) { detune_automation_.setStaticValue(detune); }
 
 protected:
 	void processInternal(unsigned frames) override;
@@ -26,20 +26,18 @@ protected:
 private:
     void calculateCoefficients(float cutoff, float resonance, float detune);  // Calculate the filter coefficients
 
-	float sampleRate_;
-
 	// Internal state for the filter
-	float vibraSpeed_ = 0.0f;
-	float vibraPos_ = 0.0f;
+    float vibra_speed_ = 0.0f;
+    float vibra_pos_ = 0.0f;
 	float w_, q_, r_, c_; // Filter coefficients
 
 	// parameters
-	AutomationNode cutoffParameterNode_;
-	AutomationNode resonanceParameterNode_;
-    AutomationNode detuneParameterNode_;
+    AutomationNode cutoff_automation_;
+    AutomationNode resonance_automation_;
+    AutomationNode detune_automation_;
 
-	float previousCutoff_;
-	float previousResonance_;
-    float previousDetune_;
+    float previous_cutoff_;
+    float previous_resonance_;
+    float previous_detune_;
 
 };

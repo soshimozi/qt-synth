@@ -1,9 +1,9 @@
 #include "adsrnode.h"
 #include <algorithm>
 
-ADSRNode::ADSRNode(float attack, float decay, float sustain, float release, float sample_rate) :
-    gate_automation_(0.0), attack_(attack), decay_(decay), sustain_(sustain),
-    release_(release), envelope_level_(0.0f), sample_rate_(sample_rate), gate_parameter_node_(0), state_(State::Idle)
+ADSRNode::ADSRNode(AudioContext& context, float attack, float decay, float sustain, float release) : AudioNode(context),
+    gate_automation_(context, 0.0), attack_(attack), decay_(decay), sustain_(sustain),
+    release_(release), envelope_level_(0.0f), state_(State::Idle)
 {}
 
 
@@ -24,14 +24,14 @@ void ADSRNode::setRelease(float release) {
 }
 
 void ADSRNode::setGate(bool gate) {
-    gate_parameter_node_.setStaticValue(gate ? 1.0f : 0.0f);
+    gate_automation_.setStaticValue(gate ? 1.0f : 0.0f);
     gate_ = gate;
 }
 
 
 void ADSRNode::processInternal(unsigned frames) {
-    ensureBufferSize(frames);
 
+    auto sampleRate = context_.sampleRate();
     for(unsigned i = 0; i < frames; ++i) {
         if(gate_ && state_ == State::Idle) {
             state_ = State::Attack;
@@ -48,7 +48,7 @@ void ADSRNode::processInternal(unsigned frames) {
             break;
 
         case State::Attack:
-            envelope_level_ = 1.0f / (attack_ * sample_rate_);
+            envelope_level_ = 1.0f / (attack_ * sampleRate);
             if(envelope_level_ >= 1.0f) {
                 envelope_level_ = 1.0f;
                 state_ = State::Decay;
@@ -56,7 +56,7 @@ void ADSRNode::processInternal(unsigned frames) {
             break;
 
         case State::Decay:
-            envelope_level_ -= (1.0f - sustain_) / (decay_ * sample_rate_);
+            envelope_level_ -= (1.0f - sustain_) / (decay_ * sampleRate);
             if(envelope_level_ <= sustain_) {
                 envelope_level_ = sustain_;
                 state_ = State::Sustain;
@@ -71,8 +71,15 @@ void ADSRNode::processInternal(unsigned frames) {
             break;
 
         case State::Release:
+            envelope_level_ -= sustain_ / (release_ * sampleRate);
+            if(envelope_level_ <= 0.0f) {
+                envelope_level_ = 0.0f;
+                state_ = State::Idle;
+            }
             break;
         }
+
+        buffer_[i] = envelope_level_;
     }
 
 }
@@ -81,7 +88,7 @@ void ADSRNode::addAutomation(AudioNode* node, unsigned port) {
     switch(static_cast<Parameters>(port))
     {
     case Parameters::GateAutomation:
-        gate_parameter_node_.setInput(node);
+        gate_automation_.setInput(node);
         break;
     }
 }
@@ -91,8 +98,8 @@ AudioNode* ADSRNode::removeAutomation(unsigned port) {
     AudioNode* node = nullptr;
     switch(static_cast<Parameters>(port)) {
     case Parameters::GateAutomation:
-        node = gate_parameter_node_.input();
-        gate_parameter_node_.setInput(nullptr);
+        node = gate_automation_.input();
+        gate_automation_.setInput(nullptr);
         break;
     }
 

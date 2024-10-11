@@ -6,25 +6,24 @@
 #include <memory>
 #include <cstring>
 
-LP12FilterNode::LP12FilterNode(float initial_cutoff, float initial_resonance, float initial_detune, float sample_rate) :
-	sampleRate_(sample_rate),
-    cutoffParameterNode_(initial_cutoff), resonanceParameterNode_(initial_resonance), detuneParameterNode_(initial_detune),
-    previousCutoff_(initial_cutoff), previousResonance_(initial_resonance), previousDetune_(initial_detune) {
+LP12FilterNode::LP12FilterNode(AudioContext& context, float initial_cutoff, float initial_resonance, float initial_detune) : AudioNode(context),
+    cutoff_automation_(context, initial_cutoff), resonance_automation_(context, initial_resonance), detune_automation_(context,initial_detune),
+    previous_cutoff_(initial_cutoff), previous_resonance_(initial_resonance), previous_detune_(initial_detune) {
 
     calculateCoefficients(initial_cutoff, initial_resonance, initial_detune);
 }
 
-void LP12FilterNode::setCutoff(float cutoff) {
-	cutoffParameterNode_.setStaticValue(cutoff);
-}
+// void LP12FilterNode::setCutoff(float cutoff) {
+// 	cutoff_automation_.setStaticValue(cutoff);
+// }
 
-void LP12FilterNode::setResonance(float resonance) {
-	resonanceParameterNode_.setStaticValue(resonance);
-}
+// void LP12FilterNode::setResonance(float resonance) {
+// 	resonance_automation_.setStaticValue(resonance);
+// }
 
-void LP12FilterNode::setDetune(float detune) {
-    detuneParameterNode_.setStaticValue(detune);
-}
+// void LP12FilterNode::setDetune(float detune) {
+//     detune_automation_.setStaticValue(detune);
+// }
 
 void LP12FilterNode::addAutomation(AudioNode* node, unsigned port) {
 	// port 0 = cutoff
@@ -32,13 +31,13 @@ void LP12FilterNode::addAutomation(AudioNode* node, unsigned port) {
 
     switch(static_cast<Parameters>(port))    {
     case Parameters::Cutoff:
-        cutoffParameterNode_.setInput(node);
+        cutoff_automation_.setInput(node);
         break;
     case Parameters::Resonance:
-        resonanceParameterNode_.setInput(node);
+        resonance_automation_.setInput(node);
         break;
     case Parameters::Detune:
-        detuneParameterNode_.setInput(node);
+        detune_automation_.setInput(node);
         break;
     }
 
@@ -59,18 +58,18 @@ AudioNode* LP12FilterNode::removeAutomation(unsigned port)
     switch(static_cast<Parameters>(port))
     {
     case Parameters::Cutoff:
-        node = cutoffParameterNode_.input();
-        cutoffParameterNode_.setInput(nullptr);
+        node = cutoff_automation_.input();
+        cutoff_automation_.setInput(nullptr);
         break;
 
     case Parameters::Resonance:
-        node = resonanceParameterNode_.input();
-        resonanceParameterNode_.setInput(nullptr);
+        node = resonance_automation_.input();
+        resonance_automation_.setInput(nullptr);
         break;
 
     case Parameters::Detune:
-        node = detuneParameterNode_.input();
-        detuneParameterNode_.setInput(nullptr);
+        node = detune_automation_.input();
+        detune_automation_.setInput(nullptr);
         break;
     }
 
@@ -95,7 +94,7 @@ void LP12FilterNode::calculateCoefficients(float cutoff, float resonance, float 
 
     float detunedCutoff = cutoff * std::pow(2.0f, detune / 1200.0f);
 
-    w_ = pi2 * detunedCutoff / sampleRate_;
+    w_ = pi2 * detunedCutoff / context_.sampleRate();
 	q_ = 1.0f - w_ / (2 * (resonance + 0.5f / (1.0f + w_)) + w_ - 2);
 	r_ = q_ * q_;
 	c_ = r_ + 1.0f - 2.0f * static_cast<float>(cos(w_)) * q_;
@@ -103,7 +102,6 @@ void LP12FilterNode::calculateCoefficients(float cutoff, float resonance, float 
 
 
 void LP12FilterNode::processInternal(unsigned frames) {
-	ensureBufferSize(frames);
 
 	if (input_ == nullptr) {
 		memset(buffer_.get(), 0, frames * sizeof(float));
@@ -113,19 +111,19 @@ void LP12FilterNode::processInternal(unsigned frames) {
 	input_->process(frames, last_processing_id_);
 
 	// process the parameter nodes
-	cutoffParameterNode_.process(frames, last_processing_id_);
-	resonanceParameterNode_.process(frames, last_processing_id_);
-    detuneParameterNode_.process(frames, last_processing_id_);
+	cutoff_automation_.process(frames, last_processing_id_);
+	resonance_automation_.process(frames, last_processing_id_);
+    detune_automation_.process(frames, last_processing_id_);
 
 	// Get the cutoff and resonance buffers (these could be dynamic inputs or static values)
 	const auto cutoff_buffer = std::make_unique<float[]>(frames);
-    memcpy(cutoff_buffer.get(), cutoffParameterNode_.buffer(), frames * sizeof(float));
+    memcpy(cutoff_buffer.get(), cutoff_automation_.buffer(), frames * sizeof(float));
 
 	const auto resonance_buffer = std::make_unique<float[]>(frames);
-    memcpy(resonance_buffer.get(), resonanceParameterNode_.buffer(), frames * sizeof(float));
+    memcpy(resonance_buffer.get(), resonance_automation_.buffer(), frames * sizeof(float));
 
     const auto detune_buffer = std::make_unique<float []>(frames);
-    memcpy(detune_buffer.get(), detuneParameterNode_.buffer(), frames * sizeof(float));
+    memcpy(detune_buffer.get(), detune_automation_.buffer(), frames * sizeof(float));
 
 	for(unsigned int i = 0; i < frames; ++i) {
 
@@ -134,25 +132,25 @@ void LP12FilterNode::processInternal(unsigned frames) {
         const float current_detune = detune_buffer[i];
 
 		// Recalculate coefficients for the current frame if cutoff or resonance has changed
-		if(std::fabs( previousCutoff_ - current_cutoff) <= std::numeric_limits<float>::epsilon() || 
-            std::fabs(previousResonance_ - current_resonance) <= std::numeric_limits<float>::epsilon() ||
-            std::fabs(previousDetune_ - current_detune) <= std::numeric_limits<float>::epsilon()) {
+		if(std::fabs( previous_cutoff_ - current_cutoff) <= std::numeric_limits<float>::epsilon() || 
+            std::fabs(previous_resonance_ - current_resonance) <= std::numeric_limits<float>::epsilon() ||
+            std::fabs(previous_detune_ - current_detune) <= std::numeric_limits<float>::epsilon()) {
 
             calculateCoefficients(current_cutoff, current_resonance, current_detune);
 
-			previousCutoff_ = current_cutoff;
-			previousResonance_ = current_resonance;
-            previousDetune_ = current_detune;
+			previous_cutoff_ = current_cutoff;
+			previous_resonance_ = current_resonance;
+            previous_detune_ = current_detune;
 		}
 
 		// process the sample
         const float sample = input_->buffer()[i];
 
-		vibraSpeed_ += (sample - vibraPos_) * c_;
-		vibraPos_ += vibraSpeed_;
+		vibra_speed_ += (sample - vibra_pos_) * c_;
+		vibra_pos_ += vibra_speed_;
 
-		vibraSpeed_ *= r_;
-		buffer_[i] = vibraPos_;
+		vibra_speed_ *= r_;
+		buffer_[i] = vibra_pos_;
 	}
 
 

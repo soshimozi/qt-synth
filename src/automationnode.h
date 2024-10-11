@@ -4,7 +4,7 @@
 
 class AutomationNode final : public AudioNode {
 public:
-	explicit AutomationNode(float initial_value = 0.0f);
+    explicit AutomationNode(AudioContext& context, float initial_value = 0.0f);
 
     void setStaticValue(float value);
     float getStaticValue() const;
