@@ -36,7 +36,7 @@ set(PROJECT_SOURCES
     src/audioplayer.cpp src/audioplayer.h
     src/voicenode.h src/voicenode.cpp
     src/adsrnode.h src/adsrnode.cpp
-    src/arithmeticnode.h src/arithmeticnode.cpp
+
     src/audiocontext.h
 )
 
@@ -49,6 +49,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
+        src/muladdnode.h src/muladdnode.cpp
 
     )
 

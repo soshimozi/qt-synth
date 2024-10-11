@@ -4,6 +4,7 @@
 #include "automationnode.h"
 #include "definitions.h"
 #include <cmath>
+#include <functional>
 
 enum class wave_shape {
     sine,
@@ -43,7 +44,18 @@ protected:
     void processInternal(unsigned int frames) override;
 
 private:
-    float generateSample(float phase, float current_pulse_width) const;
+
+    using WaveformFunction = std::function<float(const float, const float)>;
+    std::array<WaveformFunction, 6> waveform_functions_ = {
+        [this](const float phase, const float) { return sine(phase); },             // Ignore second parameter
+        [this](const float phase, const float) { return triangle(phase); },         // Ignore second parameter
+        [this](const float phase, const float) { return square(phase); },           // Ignore second parameter
+        [this](const float phase, const float) { return sawtooth(phase); },         // Ignore second parameter
+        [this](const float phase, const float) { return invSawtooth(phase); },      // Ignore second parameter
+        [this](const float phase, const float pulse_width) { return pulse(phase, pulse_width); }  // Use both parameters
+    };
+
+    inline float generateSample(const float phase, const float current_pulse_width) const { return waveform_functions_[static_cast<int>(waveform_)](phase, current_pulse_width); }
 
     // Waveform generation methods
     inline float triangle(float phase) const { return (2.0f * fabsf(2.0f * (phase / TWO_PI - floorf(phase / TWO_PI + 0.5f))) - 1.0f); }

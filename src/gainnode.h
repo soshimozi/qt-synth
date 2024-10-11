@@ -13,7 +13,7 @@ public:
     explicit GainNode(AudioContext& context, float gain = 1.0);
 
 	void processInternal(unsigned frames) override;
-    void setGain(float gain) { gain_automation_.setStaticValue(gain); }
+    void setGain(float gain) { gain_automation_.setBaseValue(gain); gain_ = gain; }
 
 protected:
     void addAutomation(AudioNode* node, unsigned port) override;
@@ -21,5 +21,6 @@ protected:
 
 private:
     AutomationNode gain_automation_;
+    float gain_;
 
 };

@@ -10,7 +10,7 @@ OscillatorNode::OscillatorNode(AudioContext& context, const wave_shape waveform,
 }
 
 void OscillatorNode::setFrequency(const float frequency) {
-    frequency_automation_.setStaticValue(frequency);
+    frequency_automation_.setBaseValue(frequency);
 }
 
 void OscillatorNode::setWaveform(const wave_shape waveform) {
@@ -18,7 +18,7 @@ void OscillatorNode::setWaveform(const wave_shape waveform) {
 }
 
 void OscillatorNode::setPulseWidth(const float pulse_width) {
-    pulse_width_automation_.setStaticValue(pulse_width);
+    pulse_width_automation_.setBaseValue(pulse_width);
 }
 
 void OscillatorNode::setDetune(const float detune) {
@@ -37,7 +37,7 @@ void OscillatorNode::processInternal(const unsigned int frames) {
 
     // Generate waveform samples
     for (unsigned int i = 0; i < frames; ++i) {
-        const float current_freq = frequency_buffer[i] * std::pow(2.0f, detune_cents_ / 1200.0f);
+        const float current_freq = (frequency_automation_.baseValue() + frequency_buffer[i]) * std::pow(2.0f, detune_cents_ / 1200.0f);
         const float current_pulse_width = pulse_width_buffer[i];
 
         buffer_[i] = generateSample(phase_, current_pulse_width);
@@ -51,25 +51,25 @@ void OscillatorNode::processInternal(const unsigned int frames) {
     }
 }
 
-float OscillatorNode::generateSample(const float phase, const float current_pulse_width) const
-{
-    switch (waveform_) {
-    case wave_shape::sine:
-        return sine(phase);
-    case wave_shape::triangle:
-        return triangle(phase);
-    case wave_shape::square:
-        return square(phase);
-    case wave_shape::sawtooth:
-        return sawtooth(phase);
-    case wave_shape::inv_sawtooth:
-        return invSawtooth(phase);
-    case wave_shape::pulse:
-        return pulse(phase, current_pulse_width);
-    }
+//float OscillatorNode::generateSample(const float phase, const float current_pulse_width) const
+// {
+//     switch (waveform_) {
+//     case wave_shape::sine:
+//         return sine(phase);
+//     case wave_shape::triangle:
+//         return triangle(phase);
+//     case wave_shape::square:
+//         return square(phase);
+//     case wave_shape::sawtooth:
+//         return sawtooth(phase);
+//     case wave_shape::inv_sawtooth:
+//         return invSawtooth(phase);
+//     case wave_shape::pulse:
+//         return pulse(phase, current_pulse_width);
+//     }
 
-    return 0.0;
-}
+//     return 0.0;
+// }
 
 //float OscillatorNode::sine(const float phase) const {
 //     return sinf(phase);  // sineTable.getValue(phase);

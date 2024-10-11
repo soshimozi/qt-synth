@@ -1,12 +1,13 @@
 #include "voicenode.h"
+#include "arithmeticnode.h"
 #include <cstring>
 
 
 VoiceNode::VoiceNode(AudioContext& context, const VoiceParameters& parameters) :
     AudioNode(context), mod_oscillator_(context), oscillator_1_(context), oscillator_2_(context),
     oscillator_gain_1_(context), oscillator_gain_2_(context), mod_oscillator_gain_1_(context), mod_oscillator_gain_2_(context),
-    oscillator_1_volume_envelope_gain_(context), oscillator_2_volume_envelope_gain_(context), filter_envelope_(context),
-    volume_envelope_(context), output_(context) {
+    oscillator_1_volume_envelope_gain_(context), oscillator_2_volume_envelope_gain_(context), filter_envelope_(context), volume_envelope_(context),
+    output_(context) {
 
     setParameters(parameters);
     buildDeviceChain();
@@ -15,8 +16,8 @@ VoiceNode::VoiceNode(AudioContext& context, const VoiceParameters& parameters) :
 VoiceNode::VoiceNode(AudioContext& context) :
     AudioNode(context), mod_oscillator_(context), oscillator_1_(context), oscillator_2_(context),
     oscillator_gain_1_(context), oscillator_gain_2_(context), mod_oscillator_gain_1_(context), mod_oscillator_gain_2_(context),
-    oscillator_1_volume_envelope_gain_(context), oscillator_2_volume_envelope_gain_(context), filter_envelope_(context),
-    volume_envelope_(context), output_(context) {
+    oscillator_1_volume_envelope_gain_(context), oscillator_2_volume_envelope_gain_(context), filter_envelope_(context), volume_envelope_(context),
+    output_(context) {
 
     buildDeviceChain();
 }
@@ -46,7 +47,6 @@ void VoiceNode::setParameters(const VoiceParameters& parameters) {
     updateVolumeEnvelopeS(parameters.volume_envelope_s_);
     updateVolumeEnvelopeR(parameters.volume_envelope_r_);
 
-
 }
 
 void VoiceNode::buildDeviceChain() {
@@ -54,8 +54,8 @@ void VoiceNode::buildDeviceChain() {
     mod_oscillator_.connect(&mod_oscillator_gain_1_);
     mod_oscillator_.connect(&mod_oscillator_gain_2_);
 
-    mod_oscillator_gain_1_.automate(&oscillator_gain_1_, GainNode::Parameters::Gain);
-    mod_oscillator_gain_2_.automate(&oscillator_gain_2_, GainNode::Parameters::Gain);
+    mod_oscillator_.automate(&oscillator_gain_1_, GainNode::Parameters::Gain);
+    mod_oscillator_.automate(&oscillator_gain_2_, GainNode::Parameters::Gain);
 
     oscillator_1_.connect(&oscillator_gain_1_);
     oscillator_2_.connect(&oscillator_gain_2_);
@@ -66,10 +66,10 @@ void VoiceNode::buildDeviceChain() {
     volume_envelope_.automate(&oscillator_1_volume_envelope_gain_, GainNode::Parameters::Gain);
     volume_envelope_.automate(&oscillator_2_volume_envelope_gain_, GainNode::Parameters::Gain);
 
-    output_.addInput(&oscillator_1_volume_envelope_gain_, 1.0);
-
     volume_envelope_.setGate(false);
-   //output_.addInput(&oscillator_2_volume_envelope_gain_, 1.0);
+
+    output_.addInput(&oscillator_1_volume_envelope_gain_, 1.0);
+    output_.addInput(&oscillator_2_volume_envelope_gain_, 1.0);
 }
 
 void VoiceNode::updateVolumeEnvelopeA(float attack) {

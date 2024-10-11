@@ -2,8 +2,9 @@
 #define VOICENODE_H
 
 #include "adsrnode.h"
+//#include "arithmeticnode.h"
 #include "audionode.h"
-#include "buffernode.h"
+//#include "buffernode.h"
 #include "gainnode.h"
 #include "mixernode.h"
 #include "oscillatornode.h"
@@ -174,7 +175,10 @@ public:
     void updateVolumeEnvelopeS(float sustain);
     void updateVolumeEnvelopeR(float release);
 
-    bool note_on() const { return note_on_; }
+    //bool note_on() const { return note_on_; }
+    void noteOn() { volume_envelope_.setGate(1.0); }
+    void noteOff() { volume_envelope_.setGate(0.0); }
+
 protected:
     void addAutomation(AudioNode* node, unsigned port) override {}
     AudioNode* removeAutomation(unsigned port) override { return nullptr;}
@@ -201,9 +205,13 @@ private:
     ADSRNode filter_envelope_;
     ADSRNode volume_envelope_;
 
+    //ArithmeticNode mod_oscillator_mod_multiplier; //(context_, ArithmeticNode::Operation::Multiply, 1);
+    //ArithmeticNode mod_oscillator_mod_adder; //(context_, ArithmeticNode::Operation::Add, 1.25);
+
+
     MixerNode output_;
 
-    bool note_on_ = false;
+    //bool note_on_ = false;
 };
 
 #endif // VOICENODE_H

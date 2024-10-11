@@ -24,31 +24,38 @@ void ADSRNode::setRelease(float release) {
 }
 
 void ADSRNode::setGate(bool gate) {
-    gate_automation_.setStaticValue(gate ? 1.0f : 0.0f);
-    gate_ = gate;
+    gate_automation_.setBaseValue(gate ? 1.0f : 0.0f);
 }
 
 
 void ADSRNode::processInternal(unsigned frames) {
 
     auto sampleRate = context_.sampleRate();
+
+    gate_automation_.process(frames, last_processing_id_);
+
+    const auto gate_buffer = std::make_unique<float[]>(frames);
+    memcpy(gate_buffer.get(), gate_automation_.buffer(), frames * sizeof(float));
+
     for(unsigned i = 0; i < frames; ++i) {
-        if(gate_ && state_ == State::Idle) {
+        auto gate = (gate_buffer[i] != 0);
+
+        if(gate && state_ == State::Idle) {
             state_ = State::Attack;
-        } else if(!gate_ && state_ != State::Idle && state_ != State::Release) {
+        } else if(!gate && state_ != State::Idle && state_ != State::Release) {
             state_ = State::Release;
         }
 
         switch(state_) {
         case State::Idle:
             envelope_level_ = 0.0f;
-            if(gate_) {
+            if(gate) {
                 state_ = State::Attack;
             }
             break;
 
         case State::Attack:
-            envelope_level_ = 1.0f / (attack_ * sampleRate);
+            envelope_level_ += 1.0f / (attack_ * sampleRate);
             if(envelope_level_ >= 1.0f) {
                 envelope_level_ = 1.0f;
                 state_ = State::Decay;
@@ -65,7 +72,7 @@ void ADSRNode::processInternal(unsigned frames) {
 
         case State::Sustain:
             envelope_level_ = sustain_;
-            if(!gate_) {
+            if(!gate) {
                 state_ = State::Release;
             }
             break;

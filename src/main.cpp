@@ -1,7 +1,9 @@
 
 #include "audioplayer.h"
 #include "gainnode.h"
+#include "lp12filternode.h"
 #include "mainwindow.h"
+#include "muladdnode.h"
 #include "oscillatornode.h"
 //#include <QApplication>
 #include <iostream>
@@ -31,26 +33,52 @@ int showMainWindow(int argc, char *argv[]) {
 int showConsole(int argc, char* argv[]) {
     AudioContext context(SAMPLE_RATE);
 
-    AudioPlayer *m_audioPlayer = new AudioPlayer;
-    GainNode *m_masterGain = new GainNode(context, .25);
+    AudioPlayer m_audioPlayer;
+    GainNode m_masterGain(context, .25);
+    GainNode modOscillatorGain1(context, .5);
+    GainNode filterModGain(context, 1);
+    OscillatorNode oscillator(context, wave_shape::sawtooth, 110);
+    OscillatorNode lfo(context, wave_shape::sine, 2);
+    MulAddNode lfoMA(context, 10, 100);
+    OscillatorNode filterLFO(context, wave_shape::sine, 1.5);
+    MulAddNode filterMA(context, 900, 1000);
 
-    auto voiceNode = VoiceNode::Builder(context)
-                        .setModFrequency(5)
-                        .setOscillator1Frequency(440)
-                        .setOscillator2Frequency(440 * std::pow(2, -1))
-                        .setOscillator1Gain(.6)
-                        .setOscillator2Gain(.4)
-                        .setOscillator1ModGain(.4)
-                        .setOscillator2ModGain(.1).build();
+    LP12FilterNode filter(context, 1000);
 
-    voiceNode.connect(m_masterGain);
+    lfo.connect(&lfoMA);
+    lfoMA.connect(&modOscillatorGain1);
+
+    modOscillatorGain1.automate(&oscillator, OscillatorNode::Parameters::Frequency);
+    filterLFO.connect(&filterMA);
+
+    filterMA.connect(&filterModGain);
+
+    //AutomationNode zeroNode(context, 0);
+    //zeroNode.connect(&filterMA);
+    filterModGain.automate(&filter, LP12FilterNode::Parameters::Cutoff);
+
+    //oscillator.connect(&m_masterGain);
+
+    oscillator.connect(&filter);
+    filter.connect(&m_masterGain);
+
+    // auto voiceNode = VoiceNode::Builder(context)
+    //                     .setModFrequency(5)
+    //                     .setOscillator1Frequency(440)
+    //                     .setOscillator2Frequency(440 * std::pow(2, -1))
+    //                     .setOscillator1Gain(.6)
+    //                     .setOscillator2Gain(.4)
+    //                     .setOscillator1ModGain(.4)
+    //                     .setOscillator2ModGain(.1).build();
+
+    //voiceNode.connect(m_masterGain);
 
     static int last_processing_id = 0;
 
     // Set the callback for the audio player
-    m_audioPlayer->setCallback([m_masterGain](const void* user_data, float* output, unsigned long frames_per_buffer) {
-        m_masterGain->process(frames_per_buffer, last_processing_id++);  // Process the signal chain
-        float* gainBuffer = m_masterGain->buffer();  // Get the processed buffer
+    m_audioPlayer.setCallback([&m_masterGain](const void* user_data, float* output, unsigned long frames_per_buffer) {
+        m_masterGain.process(frames_per_buffer, last_processing_id++);  // Process the signal chain
+        float* gainBuffer = m_masterGain.buffer();  // Get the processed buffer
 
         // Copy the buffer to the output
         for (unsigned long i = 0; i < frames_per_buffer; ++i) {
@@ -60,11 +88,11 @@ int showConsole(int argc, char* argv[]) {
     });
 
     // Initialize and start the audio player
-    if (!m_audioPlayer->initializeStream()) {
+    if (!m_audioPlayer.initializeStream()) {
         std::cerr << "Failed to initialize audio stream!";
     }
 
-    if (!m_audioPlayer->start()) {
+    if (!m_audioPlayer.start()) {
         std::cerr << "Failed to start audio stream!";
     }
 
@@ -75,7 +103,7 @@ int showConsole(int argc, char* argv[]) {
 
 }
 
-#define USE_WINDOW
+//#define USE_WINDOW
 
 int main(int argc, char *argv[])
 {

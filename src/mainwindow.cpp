@@ -685,15 +685,17 @@ MainWindow::MainWindow(QWidget *parent)
                               .setModFrequency(5)
                               .setOscillator1Frequency(440)
                               .setOscillator2Frequency(440 * std::pow(2, -1))
-                              .setOscillator1Gain(.6)
-                              .setOscillator2Gain(.4)
-                              .setOscillator1ModGain(.4)
+                              .setOscillator1Gain(.9)
+                              .setOscillator2Gain(.6)
+                              .setOscillator1ModGain(.1)
                               .setOscillator2ModGain(.1)
-                              .setVolumeEnvelopeA(1.2)
-                              .setVolumeEnvelopeD(.5)
-                              .setVolumeEnvelopeS(.75)
-                              .setVolumeEnvelopeR(.2)
+                              .setVolumeEnvelopeA(1.1)
+                              .setVolumeEnvelopeD(.1)
+                              .setVolumeEnvelopeS(1.0)
+                              .setVolumeEnvelopeR(1.5)
                               .parameters());
+
+    (*voice)->noteOn();
 
     // m_voice.setParameters(VoiceNode::Builder()
     //                           .setModFrequency(5)
@@ -722,10 +724,11 @@ MainWindow::MainWindow(QWidget *parent)
             output[i * 2 + 1] = gainBuffer[i];  // Right channel (duplicate for stereo)
         }
 
-        // if(sample_count > 88200) {
-        //     auto voice = voices_.begin();
-        //     (*voice)->setParameters(VoiceNode::Builder().parameters());
-        // }
+        if(sample_count > 88200) {
+             auto voice = voices_.begin();
+             //(*voice)->setParameters(VoiceNode::Builder().parameters());
+             (*voice)->noteOff();
+         }
     });
 
     // Initialize and start the audio player

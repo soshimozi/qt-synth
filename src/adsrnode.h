@@ -33,7 +33,6 @@ private:
     float decay_;
     float sustain_;
     float release_;
-    bool gate_;
 
     float envelope_level_;
 

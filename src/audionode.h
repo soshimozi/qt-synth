@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿#ifndef AUDIO_NODE_H
+#define AUDIO_NODE_H
 
 #include "audiocontext.h"
 #include <memory>
@@ -53,3 +54,5 @@ private:
 	void ensureBufferSize(unsigned int frames);
 
 };
+
+#endif

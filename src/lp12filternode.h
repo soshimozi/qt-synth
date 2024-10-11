@@ -14,9 +14,9 @@ public:
 public:
     LP12FilterNode(AudioContext& context, float initial_cutoff = 20000.0f, float initial_resonance = 1.0f, float initial_detune = 0.0f);
 
-    inline void setCutoff(float cutoff) { cutoff_automation_.setStaticValue(cutoff); };
-    inline void setResonance(float resonance) { resonance_automation_.setStaticValue(resonance); }
-    inline void setDetune(float detune) { detune_automation_.setStaticValue(detune); }
+    inline void setCutoff(float cutoff) { cutoff_automation_.setBaseValue(cutoff); };
+    inline void setResonance(float resonance) { resonance_automation_.setBaseValue(resonance); }
+    inline void setDetune(float detune) { detune_automation_.setBaseValue(detune); }
 
 protected:
 	void processInternal(unsigned frames) override;

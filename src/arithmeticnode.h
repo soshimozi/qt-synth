@@ -22,7 +22,7 @@ public:
 
     explicit ArithmeticNode(AudioContext& context, Operation op = Operation::Add, float value = 0);
 
-    void setValue(float value) { operation_automation_.setStaticValue(value); }
+    void setValue(float value) { operation_automation_.setBaseValue(value); }
 
 protected:
     virtual void processInternal(unsigned int frames);

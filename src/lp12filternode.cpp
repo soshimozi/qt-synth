@@ -127,9 +127,9 @@ void LP12FilterNode::processInternal(unsigned frames) {
 
 	for(unsigned int i = 0; i < frames; ++i) {
 
-		const float current_cutoff = cutoff_buffer[i];
-		const float current_resonance = resonance_buffer[i];
-        const float current_detune = detune_buffer[i];
+        const float current_cutoff = cutoff_automation_.baseValue() + cutoff_buffer[i];
+        const float current_resonance = resonance_automation_.baseValue() + resonance_buffer[i];
+        const float current_detune = detune_automation_.baseValue() + detune_buffer[i];
 
 		// Recalculate coefficients for the current frame if cutoff or resonance has changed
 		if(std::fabs( previous_cutoff_ - current_cutoff) <= std::numeric_limits<float>::epsilon() || 
