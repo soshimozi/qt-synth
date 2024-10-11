@@ -26,8 +26,6 @@ public:
     float* buffer() const;
 
 
-    // void automate(AudioNode *node, int index) { node->addAutomation(this, index); }
-
     template<typename ParamType>
     void automate(AudioNode* node, ParamType index) {
         node->addAutomation(this, static_cast<unsigned int>(index)); // Type-safe index

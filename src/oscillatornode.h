@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "audionode.h"
+#include "automatedaudionode.h"
 #include "automationnode.h"
 #include "definitions.h"
 #include <cmath>

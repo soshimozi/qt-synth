@@ -9,7 +9,7 @@ class MixerNode final : public AudioNode
 public:
     struct InputNodeInfo {
         AudioNode * node;
-        float gain;
+        //float gain;
     };
 
 public:
@@ -18,7 +18,7 @@ public:
     void addInput(AudioNode* node, float gain);
     void removeInput(AudioNode* node);
 
-    void setInputGain(AudioNode* node, float gain);
+    //void setInputGain(AudioNode* node, float gain);
 
 protected:
 	void processInternal(unsigned frames) override;

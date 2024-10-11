@@ -2,6 +2,7 @@
 #define MULADDNODE_H
 
 #include "audionode.h"
+#include "automatedaudionode.h"
 #include "automationnode.h"
 
 class MulAddNode : public AudioNode

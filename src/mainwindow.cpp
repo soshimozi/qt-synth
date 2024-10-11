@@ -656,8 +656,8 @@ void MainWindow::noteOff(int noteIndex) {
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , audio_player_(nullptr, SAMPLE_RATE, 512)
-    , audio_context_(SAMPLE_RATE)
+    , audio_player_(nullptr, SAMPLE_RATE, FRAMES)
+    , audio_context_(SAMPLE_RATE, FRAMES)
     , output_node_(audio_context_, 0.5)
     , playing_(false) /*, m_voice(wave_shape::sine, wave_shape::sine, wave_shape::sine, 4, .1, .1, 440, 232.24, .5, .5, 0, 0)*/
 {

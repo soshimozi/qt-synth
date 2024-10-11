@@ -50,6 +50,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
         src/muladdnode.h src/muladdnode.cpp
+        src/automatedaudionode.h src/automatedaudionode.cpp
+
 
     )
 

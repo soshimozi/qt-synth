@@ -2,7 +2,6 @@
 
 #include "audionode.h"
 #include <queue>
-#include <vector>
 
 class AutomationNode final : public AudioNode {
 public:
@@ -33,13 +32,11 @@ public:
 
 protected:
     void processInternal(unsigned int frames) override;
-	void addAutomation(AudioNode* node, unsigned port) override {}
+    void addAutomation(AudioNode* node, unsigned port) override {}
     AudioNode* removeAutomation(unsigned port) override { return nullptr; }
 
 private:
     float base_value_;
-
-
 
     Rate rate_;
     // Priority queue to store automation events sorted by time

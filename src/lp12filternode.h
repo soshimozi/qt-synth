@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "audionode.h"
+#include "automatedaudionode.h"
 #include "automationnode.h"
 
 class LP12FilterNode : public AudioNode

@@ -1,35 +1,6 @@
 ﻿#include "mixernode.h"
 #include <algorithm>
 
-
-//MixerNode::MixerNode(unsigned num_inputs) {}
-
-// void MixerNode::setGain(unsigned input_index, float gain) {
-
-// 	if(input_index < gains_.size()) {
-// 		gains_[input_index] = gain;
-// 	}
-// }
-
-
-// void MixerNode::addMix(AudioNode* node, unsigned int index) {
-// 	if (index < inputs_.size()) {
-// 		inputs_[index] = node;
-// 	}
-// }
-
-// AudioNode* MixerNode::removeInput(unsigned int index)
-// {
-// 	if(index < inputs_.size())	{
-// 		AudioNode* node = inputs_[index];
-// 		inputs_[index] = nullptr;
-
-// 		return node;
-// 	}
-
-// 	return nullptr;
-// }
-
 void MixerNode::processInternal(unsigned frames) {
 
     // Zero the output buffer
@@ -46,14 +17,15 @@ void MixerNode::processInternal(unsigned frames) {
         float* inputBuffer = input_node.node->buffer();
 
         for (unsigned int i = 0; i < frames; ++i) {
-            buffer_[i] += ((inputBuffer[i] * input_node.gain) * normalizationFactor);
+            //buffer_[i] += ((inputBuffer[i] * input_node.gain) * normalizationFactor);
+            buffer_[i] += (inputBuffer[i] * normalizationFactor);
         }
     }
 }
 
 
 void MixerNode::addInput(AudioNode *node, float gain) {
-    std::lock_guard<std::mutex> lock(input_mutex_);
+    //std::lock_guard<std::mutex> lock(input_mutex_);
 
     auto it = std::find_if(inputs_.begin(), inputs_.end(),
                            [node](const InputNodeInfo& info) {
@@ -61,12 +33,14 @@ void MixerNode::addInput(AudioNode *node, float gain) {
                            });
 
     if (it == inputs_.end()) {
-        inputs_.push_back({node, gain});
+        //inputs_.push_back({node, gain});
+        inputs_.push_back({node});
+
     }
 }
 
 void MixerNode::removeInput(AudioNode *node) {
-    std::lock_guard<std::mutex> lock(input_mutex_);
+    //std::lock_guard<std::mutex> lock(input_mutex_);
 
     inputs_.erase(std::remove_if(inputs_.begin(), inputs_.end(),
                                  [node](const InputNodeInfo& info) {
@@ -76,17 +50,17 @@ void MixerNode::removeInput(AudioNode *node) {
 
 }
 
-void MixerNode::setInputGain(AudioNode* node, float gain) {
-    std::lock_guard<std::mutex> lock(input_mutex_);
+//void MixerNode::setInputGain(AudioNode* node, float gain) {
+//     //std::lock_guard<std::mutex> lock(input_mutex_);
 
-    auto it = std::find_if(inputs_.begin(), inputs_.end(),
-                           [node](const InputNodeInfo& info) {
-                               return info.node == node;
-                           });
+//     auto it = std::find_if(inputs_.begin(), inputs_.end(),
+//                            [node](const InputNodeInfo& info) {
+//                                return info.node == node;
+//                            });
 
-    if(it != inputs_.end()) {
-        (*it).gain = gain;
-    }
-}
+//     if(it != inputs_.end()) {
+//         (*it).gain = gain;
+//     }
+// }
 
 
