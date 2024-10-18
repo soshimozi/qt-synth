@@ -50,7 +50,7 @@ KnobControl * MainWindow::createKnob(QVBoxLayout ** layout,
     vbox->setContentsMargins(1, 1, 1, 1);
     vbox->setSpacing(1);
 
-    knob->setSpriteSheet(m_spritesheet);  // Set the sprite sheet
+    knob->setSpriteSheet(spritesheet_);  // Set the sprite sheet
     knob->setMinimum(minimum);  // Set minimum value
     knob->setMaximum(maximum);  // Set maximum value
     knob->setValue(initialValue);  // Initial value
@@ -74,7 +74,7 @@ KnobControl * MainWindow::createKnob(QVBoxLayout ** layout,
     });
 
     connect(knob, &KnobControl::hoverLeft, this, [=]() {
-        m_tooltip.hide();
+        knob_tooltip_.hide();
     });
 
     return knob;
@@ -130,10 +130,10 @@ QVBoxLayout *MainWindow::createModLayout() {
 
     QStringList waveforms = {"Sine", "Square", "Saw", "Triangle"};
     auto waveformCombo = createComboBox(waveforms);
-    waveformCombo->setCurrentIndex(m_modShapeIndex);
+    waveformCombo->setCurrentIndex(static_cast<int>(mod_waveform_));
 
     connect(waveformCombo, &QComboBox::currentIndexChanged, this, [=](int index){
-        m_modShapeIndex = index;
+        mod_waveform_ = static_cast<wave_shape>(index);
         updateVoices();
     });
 
@@ -146,19 +146,19 @@ QVBoxLayout *MainWindow::createModLayout() {
     vbModGroup->addLayout(waveformVerticalLayout);
 
     QVBoxLayout* frequencyKnobLayout;
-    auto modFrequencyKnob = createKnob(&frequencyKnobLayout, 0, 10, m_modFrequency, tr("FREQ"), 1);
-    connectKnobToMember(modFrequencyKnob, m_modFrequency, this, std::bind(&MainWindow::updateVoices, this));
+    auto modFrequencyKnob = createKnob(&frequencyKnobLayout, 0, 10, mod_frequency_, tr("FREQ"), 1);
+    connectKnobToMember(modFrequencyKnob, mod_frequency_, this, std::bind(&MainWindow::updateVoices, this));
     vbModGroup->addLayout(frequencyKnobLayout);
 
     QVBoxLayout *modMixLayout;
-    auto modMixKnob = createKnob(&modMixLayout, 0, 100, m_osc1ModMix, tr("OSC1 TREMOLO"));
-    connectKnobToMember(modMixKnob, m_osc1ModMix, this, std::bind(&MainWindow::updateVoices, this));
+    auto modMixKnob = createKnob(&modMixLayout, 0, 100, osc_1_mod_mix_, tr("OSC1 TREMOLO"));
+    connectKnobToMember(modMixKnob, osc_1_mod_mix_, this, std::bind(&MainWindow::updateVoices, this));
     vbModGroup->addLayout(modMixLayout);
 
 
     QVBoxLayout *modMix2Layout;
-    auto modMix2Knob = createKnob(&modMix2Layout, 0, 100, m_osc2ModMix, tr("OSC2 TREMOLO"));
-    connectKnobToMember(modMix2Knob, m_osc2ModMix, this, std::bind(&MainWindow::updateVoices, this));
+    auto modMix2Knob = createKnob(&modMix2Layout, 0, 100, osc_2_mod_mix_, tr("OSC2 TREMOLO"));
+    connectKnobToMember(modMix2Knob, osc_2_mod_mix_, this, std::bind(&MainWindow::updateVoices, this));
     vbModGroup->addLayout(modMix2Layout);
 
     return vbModGroup;
@@ -170,13 +170,13 @@ void MainWindow::showKnobTooltip(const KnobControl* knob, int decimalPlaces, boo
     auto tooltipText = QString("%1 %2").arg((useFormatter ? formatNumberPrefix(value) : QString::number(value, 'f', decimalPlaces)), suffix);
     auto tooltipPoint = knob->centerPoint() + QPoint(-5, -20);
 
-    m_tooltip.showTooltip(tooltipText, tooltipPoint, 55000);
+    knob_tooltip_.showTooltip(tooltipText, tooltipPoint, 55000);
 
 }
 
 void MainWindow::showTooltip(const QPoint &point, QString toolTipText)
 {
-    m_tooltip.showTooltip(toolTipText, point, 25000);
+    knob_tooltip_.showTooltip(toolTipText, point, 25000);
 }
 
 QVBoxLayout* MainWindow::createOsc1Layout() {
@@ -189,10 +189,10 @@ QVBoxLayout* MainWindow::createOsc1Layout() {
     QLabel *osc1WaveformLabel = createLabel(tr("WAVEFORM"), true, 11);
 
     auto waveformCombo = createComboBox({"Sine", "Square", "Saw", "Triangle"});
-    waveformCombo->setCurrentIndex(m_osc1WaveformIndex);
+    waveformCombo->setCurrentIndex(static_cast<int>(osc_1_waveform_));
 
     connect(waveformCombo, &QComboBox::currentIndexChanged, this, [=](int index){
-        m_osc1WaveformIndex = index;
+        osc_1_waveform_ = static_cast<wave_shape>(index);
         updateVoices();
     });
 
@@ -205,8 +205,8 @@ QVBoxLayout* MainWindow::createOsc1Layout() {
     osc1Grid->addLayout(waveformVerticalLayout, 0, 0, Qt::AlignHCenter | Qt::AlignTop);
 
     QVBoxLayout * detuneKnobLayout;
-    auto detuneKnob = createKnob(&detuneKnobLayout, -1200, 1200, m_osc1Detune, "DETUNE");
-    connectKnobToMember(detuneKnob, m_osc1Detune, this, std::bind(&MainWindow::updateVoices, this));
+    auto detuneKnob = createKnob(&detuneKnobLayout, -1200, 1200, osc_1_detune_, "DETUNE");
+    connectKnobToMember(detuneKnob, osc_1_detune_, this, std::bind(&MainWindow::updateVoices, this));
     osc1Grid->addLayout(detuneKnobLayout, 1, 0, Qt::AlignHCenter | Qt::AlignTop);
 
 
@@ -217,11 +217,11 @@ QVBoxLayout* MainWindow::createOsc1Layout() {
     QLabel *osc1IntervalLabel = createLabel(tr("INTERVAL"), true, 11);
 
     auto intervalCombo = createComboBox({"32'", "16'", "8'"});
-    intervalCombo->setCurrentIndex(m_osc1IntervalIndex);
+    intervalCombo->setCurrentIndex(osc_1_interval_);
 
     connect(intervalCombo, &QComboBox::currentIndexChanged, this, [=](int index){
         // Handle the selected index
-        m_osc1IntervalIndex = index;
+        osc_1_interval_ = index;
         updateVoices();
     });
 
@@ -233,8 +233,8 @@ QVBoxLayout* MainWindow::createOsc1Layout() {
     osc1Grid->addLayout(waveformVerticalLayout, 0, 1, Qt::AlignHCenter | Qt::AlignTop);
 
     QVBoxLayout * mixKnobLayout;
-    auto mixKnob = createKnob(&mixKnobLayout, 0, 100, m_osc1Mix, "MIX");
-    connectKnobToMember(mixKnob, m_osc1Mix, this, std::bind(&MainWindow::updateVoices, this));
+    auto mixKnob = createKnob(&mixKnobLayout, 0, 100, osc_1_mix_, "MIX");
+    connectKnobToMember(mixKnob, osc_1_mix_, this, std::bind(&MainWindow::updateVoices, this));
     osc1Grid->addLayout(mixKnobLayout, 1, 1, Qt::AlignHCenter | Qt::AlignTop);
 
     vbOsc1Group->setAlignment(Qt::AlignTop);
@@ -252,11 +252,11 @@ QVBoxLayout* MainWindow::createOsc2Layout() {
     QLabel *oscWaveformLabel = createLabel(tr("WAVEFORM"), true, 11);
 
     auto waveformCombo = createComboBox({"Sine", "Square", "Saw", "Triangle"});
-    waveformCombo->setCurrentIndex(m_osc2WaveformIndex);
+    waveformCombo->setCurrentIndex(static_cast<int>(osc_2_waveform_));
 
     connect(waveformCombo, &QComboBox::currentIndexChanged, this, [=](int index){
         // Handle the selected index
-        m_osc2WaveformIndex = index;
+        osc_2_waveform_ = static_cast<wave_shape>(index);
         updateVoices();
     });
 
@@ -270,8 +270,8 @@ QVBoxLayout* MainWindow::createOsc2Layout() {
     gridOscillator->addLayout(waveformVerticalLayout, 0, 0, Qt::AlignHCenter | Qt::AlignTop);
 
     QVBoxLayout * detuneKnobLayout;
-    auto detuneKnob = createKnob(&detuneKnobLayout, -1200, 1200, m_osc2Detune, "DETUNE");
-    connectKnobToMember(detuneKnob, m_osc2Detune, this, std::bind(&MainWindow::updateVoices, this));
+    auto detuneKnob = createKnob(&detuneKnobLayout, -1200, 1200, osc_2_detune_, "DETUNE");
+    connectKnobToMember(detuneKnob, osc_2_detune_, this, std::bind(&MainWindow::updateVoices, this));
     gridOscillator->addLayout(detuneKnobLayout, 1, 0, Qt::AlignHCenter | Qt::AlignTop);
 
     // // /////////////////////////////////////////////////
@@ -282,12 +282,12 @@ QVBoxLayout* MainWindow::createOsc2Layout() {
 
 
     auto intervalCombo = createComboBox({"16'", "8'", "4'"});
-    intervalCombo->setCurrentIndex(m_osc2IntervalIndex);
+    intervalCombo->setCurrentIndex(osc_2_interval_);
 
 
     connect(intervalCombo, &QComboBox::currentIndexChanged, this, [=](int index){
         // Handle the selected index
-        m_osc2IntervalIndex = index;
+        osc_2_interval_ = index;
         updateVoices();
     });
 
@@ -301,8 +301,8 @@ QVBoxLayout* MainWindow::createOsc2Layout() {
     gridOscillator->addLayout(intervalVerticalLayout, 0, 1, Qt::AlignHCenter | Qt::AlignTop);
 
     QVBoxLayout * mixKnobLayout;
-    auto mixKnob= createKnob(&mixKnobLayout, 0, 100, m_osc2Mix, "MIX");
-    connectKnobToMember(mixKnob, m_osc2Mix, this, std::bind(&MainWindow::updateVoices, this));
+    auto mixKnob= createKnob(&mixKnobLayout, 0, 100, osc_2_mix_, "MIX");
+    connectKnobToMember(mixKnob, osc_2_mix_, this, std::bind(&MainWindow::updateVoices, this));
     gridOscillator->addLayout(mixKnobLayout, 1, 1, Qt::AlignHCenter | Qt::AlignTop);
 
     vbOscillator->setAlignment(Qt::AlignTop);
@@ -315,20 +315,20 @@ QVBoxLayout * MainWindow::createFilterLayout() {
     QVBoxLayout *vbFilterGroup = new QVBoxLayout;
 
     QVBoxLayout* knobLayout;
-    auto cutoffKnob = createKnob(&knobLayout, log2(20), log2(20000), m_filterCutoff, tr("CUTOFF"), 0, true, true, "hz");
-    connectKnobToMember(cutoffKnob, m_filterCutoff, this,  std::bind(&MainWindow::updateVoices, this));
+    auto cutoffKnob = createKnob(&knobLayout, log2(20), log2(20000), filter_cutoff_, tr("CUTOFF"), 0, true, true, "hz");
+    connectKnobToMember(cutoffKnob, filter_cutoff_, this,  std::bind(&MainWindow::updateVoices, this));
     vbFilterGroup->addLayout(knobLayout);
 
-    auto knobResonance = createKnob(&knobLayout, 0, 20, m_filterQ, tr("Q"), 1);
-    connectKnobToMember(knobResonance, m_filterQ, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobResonance = createKnob(&knobLayout, 0, 20, filter_resonance_, tr("Q"), 1);
+    connectKnobToMember(knobResonance, filter_resonance_, this, std::bind(&MainWindow::updateVoices, this));
     vbFilterGroup->addLayout(knobLayout);
 
-    auto knobFilterMod = createKnob(&knobLayout, 0, 100, m_filterMod, tr("MOD"));
-    connectKnobToMember(knobFilterMod, m_filterMod, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobFilterMod = createKnob(&knobLayout, 0, 100, filter_mod_, tr("MOD"));
+    connectKnobToMember(knobFilterMod, filter_mod_, this, std::bind(&MainWindow::updateVoices, this));
     vbFilterGroup->addLayout(knobLayout);
 
-    auto knobFilterEnv = createKnob(&knobLayout, 0, 100, m_filterEnv, tr("ENV"));
-    connectKnobToMember(knobFilterEnv, m_filterEnv, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobFilterEnv = createKnob(&knobLayout, 0, 100, filter_envelope_, tr("ENV"));
+    connectKnobToMember(knobFilterEnv, filter_envelope_, this, std::bind(&MainWindow::updateVoices, this));
     vbFilterGroup->addLayout(knobLayout);
 
     return vbFilterGroup;
@@ -339,23 +339,23 @@ QHBoxLayout *MainWindow::createFilterEnvelopeLayout() {
 
 
     QVBoxLayout* knobLayout;
-    auto knobFilterEnvelopeA = createKnob(&knobLayout, 0, 100, m_filterEnvelopeA, tr("ATTACK"));
-    connectKnobToMember(knobFilterEnvelopeA, m_filterEnvelopeA, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobFilterEnvelopeA = createKnob(&knobLayout, 0, 100, filter_envelope_a_, tr("ATTACK"));
+    connectKnobToMember(knobFilterEnvelopeA, filter_envelope_a_, this, std::bind(&MainWindow::updateVoices, this));
     qhbFilterEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    auto knobFilterEnvelopeD = createKnob(&knobLayout, 0, 100, m_filterEnvelopeD, tr("DECAY"));
-    connectKnobToMember(knobFilterEnvelopeD, m_filterEnvelopeD, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobFilterEnvelopeD = createKnob(&knobLayout, 0, 100, filter_envelope_d_, tr("DECAY"));
+    connectKnobToMember(knobFilterEnvelopeD, filter_envelope_d_, this, std::bind(&MainWindow::updateVoices, this));
     qhbFilterEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    auto knobFilterEnvelopeS = createKnob(&knobLayout, 0, 100, m_filterEnvelopeS , tr("SUSTAIN"));
-    connectKnobToMember(knobFilterEnvelopeS, m_filterEnvelopeS, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobFilterEnvelopeS = createKnob(&knobLayout, 0, 100, filter_envelope_s_ , tr("SUSTAIN"));
+    connectKnobToMember(knobFilterEnvelopeS, filter_envelope_s_, this, std::bind(&MainWindow::updateVoices, this));
     qhbFilterEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    auto knobFilterEnvelopeR = createKnob(&knobLayout, 0, 100, m_filterEnvelopeR , tr("RELEASE"));
-    connectKnobToMember(knobFilterEnvelopeR, m_filterEnvelopeR, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobFilterEnvelopeR = createKnob(&knobLayout, 0, 100, filter_envelope_r_ , tr("RELEASE"));
+    connectKnobToMember(knobFilterEnvelopeR, filter_envelope_r_, this, std::bind(&MainWindow::updateVoices, this));
     qhbFilterEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
     return qhbFilterEnvelope;
@@ -365,23 +365,23 @@ QHBoxLayout *MainWindow::createVolumeEnvelopeLayout() {
     QHBoxLayout *qhbVolumeEnvelope = new QHBoxLayout;
     QVBoxLayout* knobLayout;
 
-    auto knobVolumeEnvelopeA = createKnob(&knobLayout, 0, 100, m_volumeEnvelopeA, tr("ATTACK"));
-    connectKnobToMember(knobVolumeEnvelopeA, m_volumeEnvelopeA, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobVolumeEnvelopeA = createKnob(&knobLayout, 0, 100, volume_envelope_a_, tr("ATTACK"));
+    connectKnobToMember(knobVolumeEnvelopeA, volume_envelope_a_, this, std::bind(&MainWindow::updateVoices, this));
     qhbVolumeEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    auto knobVolumeEnvelopeD = createKnob(&knobLayout, 0, 100, m_volumeEnvelopeD, tr("DECAY"));
-    connectKnobToMember(knobVolumeEnvelopeD, m_volumeEnvelopeD, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobVolumeEnvelopeD = createKnob(&knobLayout, 0, 100, volume_envelope_d_, tr("DECAY"));
+    connectKnobToMember(knobVolumeEnvelopeD, volume_envelope_d_, this, std::bind(&MainWindow::updateVoices, this));
     qhbVolumeEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    auto knobVolumeEnvelopeS = createKnob(&knobLayout, 0, 100, m_volumeEnvelopeS, tr("SUSTAIN"));
-    connectKnobToMember(knobVolumeEnvelopeS, m_volumeEnvelopeS, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobVolumeEnvelopeS = createKnob(&knobLayout, 0, 100, volume_envelope_s_, tr("SUSTAIN"));
+    connectKnobToMember(knobVolumeEnvelopeS, volume_envelope_s_, this, std::bind(&MainWindow::updateVoices, this));
     qhbVolumeEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
-    auto knobVolumeEnvelopeR = createKnob(&knobLayout, 0, 100, m_volumeEnvelopeR, tr("RELEASE"));
-    connectKnobToMember(knobVolumeEnvelopeR, m_volumeEnvelopeR, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobVolumeEnvelopeR = createKnob(&knobLayout, 0, 100, volume_envelope_r_, tr("RELEASE"));
+    connectKnobToMember(knobVolumeEnvelopeR, volume_envelope_r_, this, std::bind(&MainWindow::updateVoices, this));
     qhbVolumeEnvelope->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
@@ -392,20 +392,20 @@ QHBoxLayout *MainWindow::createMasterLayout() {
     QHBoxLayout *qhbMaster = new QHBoxLayout;
 
     QVBoxLayout* knobLayout;
-    auto knobDrive = createKnob(&knobLayout, 0, 100, m_overdrive , tr("DRIVE"));
-    connectKnobToMember(knobDrive, m_overdrive, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobDrive = createKnob(&knobLayout, 0, 100, overdrive_ , tr("DRIVE"));
+    connectKnobToMember(knobDrive, overdrive_, this, std::bind(&MainWindow::updateVoices, this));
     qhbMaster->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
 
-    auto knobReverb = createKnob(&knobLayout, 0, 100, m_reverb, tr("REVERB"));
-    connectKnobToMember(knobReverb, m_reverb, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobReverb = createKnob(&knobLayout, 0, 100, reverb_, tr("REVERB"));
+    connectKnobToMember(knobReverb, reverb_, this, std::bind(&MainWindow::updateVoices, this));
     qhbMaster->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
 
-    auto knobVolume = createKnob(&knobLayout, 0, 100, m_volume, tr("VOLUME"));
-    connectKnobToMember(knobVolume, m_volume, this, std::bind(&MainWindow::updateVoices, this));
+    auto knobVolume = createKnob(&knobLayout, 0, 100, volume_, tr("VOLUME"));
+    connectKnobToMember(knobVolume, volume_, this, std::bind(&MainWindow::updateVoices, this));
     qhbMaster->addLayout(knobLayout);
     knobLayout->setAlignment(Qt::AlignVCenter);
 
@@ -413,11 +413,11 @@ QHBoxLayout *MainWindow::createMasterLayout() {
     QComboBox *midiInCombo = new QComboBox;
     QComboBox *octaveCombo = createComboBox({"+3", "+2", "+1", "NORMAL", "-1", "-2", "-3"});
 
-    octaveCombo->setCurrentIndex(m_keyboardOctaveIndex);
+    octaveCombo->setCurrentIndex(keyboard_octave_offset_);
 
     connect(octaveCombo, &QComboBox::currentIndexChanged, this, [=](int index){
         // Handle the selected index
-        m_keyboardOctaveIndex = index;
+        keyboard_octave_offset_ = index;
         updateVoices();
     });
 
@@ -484,7 +484,7 @@ QWidget *MainWindow::createKeyboardWidget() {
         label->setFont(font);
 
         connect(key, &QPushButton::pressed, this, [=]() {
-            noteOn(calculateNoteIndex(m_keyboardOctaveIndex, whiteNoteIndexes[i]));
+            noteOn(calculateNoteIndex(keyboard_octave_offset_, whiteNoteIndexes[i]));
         });
     }
 
@@ -536,7 +536,7 @@ QWidget *MainWindow::createKeyboardWidget() {
         layout->addWidget(label);
 
         connect(blackKey, &QPushButton::pressed, this, [=]() {
-            noteOn(calculateNoteIndex(m_keyboardOctaveIndex, blackNoteIndexes[i]));
+            noteOn(calculateNoteIndex(keyboard_octave_offset_, blackNoteIndexes[i]));
         });
 
     }
@@ -632,11 +632,11 @@ void MainWindow::buildLayout() {
 
 
 void MainWindow::updateVoices() {
-    qDebug() << "m_filterCutoff" << m_filterCutoff;
-    qDebug() << "m_modFrequency" << m_modFrequency;
-    qDebug() << "m_osc1ModMix" << m_osc1ModMix;
-    qDebug() << "m_osc2ModMix" << m_osc2ModMix;
-    qDebug() << "m_filterEnv" << m_filterEnv;
+    qDebug() << "m_filterCutoff" << filter_cutoff_;
+    qDebug() << "m_modFrequency" << mod_frequency_;
+    qDebug() << "m_osc1ModMix" << osc_1_mod_mix_;
+    qDebug() << "m_osc2ModMix" << osc_2_mod_mix_;
+    qDebug() << "m_filterEnv" << filter_envelope_;
 }
 
 void MainWindow::noteOn(int noteIndex) {
@@ -656,21 +656,22 @@ void MainWindow::noteOff(int noteIndex) {
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , m_audioPlayer(nullptr, SAMPLE_RATE, 512)
-    , m_masterGain(0.5)
-    , m_playing(false) /*, m_voice(wave_shape::sine, wave_shape::sine, wave_shape::sine, 4, .1, .1, 440, 232.24, .5, .5, 0, 0)*/
+    , audio_player_(nullptr, SAMPLE_RATE, FRAMES)
+    , audio_context_(SAMPLE_RATE, FRAMES)
+    , output_node_(audio_context_, 0.5)
+    , playing_(false) /*, m_voice(wave_shape::sine, wave_shape::sine, wave_shape::sine, 4, .1, .1, 440, 232.24, .5, .5, 0, 0)*/
 {
 
     for(uint i = 0; i < 32; i++) {
-        voices_.push_back(new VoiceNode());
+        voices_.push_back(new VoiceNode(audio_context_));
     }
 
     //m_voice.connect(&m_masterGain);
 
-    m_spritesheet = std::make_shared<SpriteSheet>();
-    m_spritesheet->setOrientation(Qt::Vertical);
-    m_spritesheet->setCells(101);  // Number of cells (frames)
-    m_spritesheet->setSource(":/images/LittlePhatty.png");  // Make sure to have a valid image here
+    spritesheet_ = std::make_shared<SpriteSheet>();
+    spritesheet_->setOrientation(Qt::Vertical);
+    spritesheet_->setCells(101);  // Number of cells (frames)
+    spritesheet_->setSource(":/images/LittlePhatty.png");  // Make sure to have a valid image here
 
     try {
         buildLayout();
@@ -680,14 +681,21 @@ MainWindow::MainWindow(QWidget *parent)
 
     auto voice = voices_.begin();
 
-    (*voice)->setParameters(VoiceNode::Builder()
+    (*voice)->setParameters(VoiceNode::Builder(audio_context_)
                               .setModFrequency(5)
                               .setOscillator1Frequency(440)
                               .setOscillator2Frequency(440 * std::pow(2, -1))
-                              .setOscillator1Gain(.6)
-                              .setOscillator2Gain(.4)
-                              .setOscillator1ModGain(.4)
-                              .setOscillator2ModGain(.1).parameters());
+                              .setOscillator1Gain(.9)
+                              .setOscillator2Gain(.6)
+                              .setOscillator1ModGain(.1)
+                              .setOscillator2ModGain(.1)
+                              .setVolumeEnvelopeA(1.1)
+                              .setVolumeEnvelopeD(.1)
+                              .setVolumeEnvelopeS(1.0)
+                              .setVolumeEnvelopeR(1.5)
+                              .parameters());
+
+    (*voice)->noteOn();
 
     // m_voice.setParameters(VoiceNode::Builder()
     //                           .setModFrequency(5)
@@ -698,17 +706,17 @@ MainWindow::MainWindow(QWidget *parent)
     //                           .setOscillator1ModGain(.4)
     //                           .setOscillator2ModGain(.1).parameters());
 
-    (*voice)->connect(&m_masterGain);
+    (*voice)->connect(&output_node_);
 
     static int sample_count = 0;
 
     // Set the callback for the audio player
-    m_audioPlayer.setCallback([this](const void* user_data, float* output, unsigned long frames_per_buffer) {
+    audio_player_.setCallback([this](const void* user_data, float* output, unsigned long frames_per_buffer) {
 
         sample_count += frames_per_buffer;
 
-        m_masterGain.process(frames_per_buffer, last_processing_id++);  // Process the signal chain
-        float* gainBuffer = m_masterGain.buffer();  // Get the processed buffer
+        output_node_.process(frames_per_buffer, last_processing_id++);  // Process the signal chain
+        float* gainBuffer = output_node_.buffer();  // Get the processed buffer
 
         // Copy the buffer to the output
         for (unsigned long i = 0; i < frames_per_buffer; ++i) {
@@ -717,17 +725,18 @@ MainWindow::MainWindow(QWidget *parent)
         }
 
         if(sample_count > 88200) {
-            auto voice = voices_.begin();
-            (*voice)->setParameters(VoiceNode::Builder().parameters());
-        }
+             auto voice = voices_.begin();
+             //(*voice)->setParameters(VoiceNode::Builder().parameters());
+             (*voice)->noteOff();
+         }
     });
 
     // Initialize and start the audio player
-    if (!m_audioPlayer.initializeStream()) {
+    if (!audio_player_.initializeStream()) {
         qDebug() << "Failed to initialize audio stream!";
     }
 
-    if (!m_audioPlayer.start()) {
+    if (!audio_player_.start()) {
         qDebug() << "Failed to start audio stream!";
     }
 

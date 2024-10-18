@@ -1,31 +1,23 @@
 #include "voicenode.h"
+#include "arithmeticnode.h"
 #include <cstring>
 
 
-VoiceNode::VoiceNode(const VoiceParameters& parameters)
-    : m_oscillator_gain1(0), m_oscillator_gain2(0),
-    m_mod_oscillator_gain1(0), m_mod_oscillator_gain2(0),
-    m_mixer_node(2) {
+VoiceNode::VoiceNode(AudioContext& context, const VoiceParameters& parameters) :
+    AudioNode(context), mod_oscillator_(context), oscillator_1_(context), oscillator_2_(context),
+    oscillator_gain_1_(context), oscillator_gain_2_(context), mod_oscillator_gain_1_(context), mod_oscillator_gain_2_(context),
+    oscillator_1_volume_envelope_gain_(context), oscillator_2_volume_envelope_gain_(context), filter_envelope_(context), volume_envelope_(context),
+    output_(context) {
 
     setParameters(parameters);
     buildDeviceChain();
-    // buildEffectChain(mod_waveform,
-    //                  oscillator_1_waveform,
-    //                  oscillator_2_waveform,
-    //                  mod_frequency,
-    //                  oscillator_1_mod_gain,
-    //                  oscillator_2_mod_gain,
-    //                  oscillator_1_frequency,
-    //                  oscillator_2_frequency,
-    //                  oscillator_1_gain,
-    //                  oscillator_2_gain,
-    //                  oscillator_1_detune,
-    //                  oscillator_2_detune);
 }
 
-VoiceNode::VoiceNode() :  m_oscillator_gain1(0), m_oscillator_gain2(0),
-    m_mod_oscillator_gain1(0), m_mod_oscillator_gain2(0),
-    m_mixer_node(2) {
+VoiceNode::VoiceNode(AudioContext& context) :
+    AudioNode(context), mod_oscillator_(context), oscillator_1_(context), oscillator_2_(context),
+    oscillator_gain_1_(context), oscillator_gain_2_(context), mod_oscillator_gain_1_(context), mod_oscillator_gain_2_(context),
+    oscillator_1_volume_envelope_gain_(context), oscillator_2_volume_envelope_gain_(context), filter_envelope_(context), volume_envelope_(context),
+    output_(context) {
 
     buildDeviceChain();
 }
@@ -49,87 +41,112 @@ void VoiceNode::setParameters(const VoiceParameters& parameters) {
 
     updateOscillator1Detune(parameters.oscillator_1_detune);
     updateOscillator2Detune(parameters.oscillator_2_detune);
+
+    updateVolumeEnvelopeA(parameters.volume_envelope_a_);
+    updateVolumeEnvelopeD(parameters.volume_envelope_d_);
+    updateVolumeEnvelopeS(parameters.volume_envelope_s_);
+    updateVolumeEnvelopeR(parameters.volume_envelope_r_);
+
 }
 
 void VoiceNode::buildDeviceChain() {
 
-    m_mod_oscillator.connect(&m_mod_oscillator_gain1);
-    m_mod_oscillator.connect(&m_mod_oscillator_gain2);
+    mod_oscillator_.connect(&mod_oscillator_gain_1_);
+    mod_oscillator_.connect(&mod_oscillator_gain_2_);
 
-    m_mod_oscillator_gain1.automate(&m_oscillator_gain1, GainNode::Parameters::GainModulation);
-    m_mod_oscillator_gain2.automate(&m_oscillator_gain2, GainNode::Parameters::GainModulation);
+    mod_oscillator_.automate(&oscillator_gain_1_, GainNode::Parameters::Gain);
+    mod_oscillator_.automate(&oscillator_gain_2_, GainNode::Parameters::Gain);
 
-    m_oscillator1.connect(&m_oscillator_gain1);
-    m_oscillator2.connect(&m_oscillator_gain2);
+    oscillator_1_.connect(&oscillator_gain_1_);
+    oscillator_2_.connect(&oscillator_gain_2_);
 
-    m_mixer_node.addMix(&m_oscillator_gain1, 0);
-    m_mixer_node.addMix(&m_oscillator_gain2, 1);
+    oscillator_gain_1_.connect(&oscillator_1_volume_envelope_gain_);
+    oscillator_gain_2_.connect(&oscillator_2_volume_envelope_gain_);
 
-    // mixer is 100% for each channel, the oscillator gain will set the
-    // the actual signal going into the output node.
-    m_mixer_node.setGain(0, 1.0);
-    m_mixer_node.setGain(1, 1.0);
+    volume_envelope_.automate(&oscillator_1_volume_envelope_gain_, GainNode::Parameters::Gain);
+    volume_envelope_.automate(&oscillator_2_volume_envelope_gain_, GainNode::Parameters::Gain);
+
+    volume_envelope_.setGate(false);
+
+    output_.addInput(&oscillator_1_volume_envelope_gain_, 1.0);
+    output_.addInput(&oscillator_2_volume_envelope_gain_, 1.0);
+}
+
+void VoiceNode::updateVolumeEnvelopeA(float attack) {
+    volume_envelope_.setAttack(attack);
+}
+
+void VoiceNode::updateVolumeEnvelopeD(float decay) {
+    volume_envelope_.setDecay(decay);
+}
+
+void VoiceNode::updateVolumeEnvelopeS(float sustain) {
+    volume_envelope_.setSustain(sustain);
+}
+
+void VoiceNode::updateVolumeEnvelopeR(float release) {
+    volume_envelope_.setRelease(release);
 }
 
 void VoiceNode::updateOscillator1Detune(float detune) {
-    m_oscillator1.setDetune(detune);
+    oscillator_1_.setDetune(detune);
 }
 
 void VoiceNode::updateOscillator2Detune(float detune) {
-    m_oscillator2.setDetune(detune);
+    oscillator_2_.setDetune(detune);
 }
 
 
 void VoiceNode::setModWaveform(wave_shape waveform) {
-    m_mod_oscillator.setWaveform(waveform);
+    mod_oscillator_.setWaveform(waveform);
 }
 
 void VoiceNode::setOscillator1Waveform(wave_shape waveform) {
-    m_oscillator1.setWaveform(waveform);
+    oscillator_1_.setWaveform(waveform);
 }
 
 void VoiceNode::setOscillator2Waveform(wave_shape waveform) {
-    m_oscillator2.setWaveform(waveform);
+    oscillator_2_.setWaveform(waveform);
 }
 
 void VoiceNode::updateModFrequency(float frequency) {
-    m_mod_oscillator.setFrequency(frequency);
+    mod_oscillator_.setFrequency(frequency);
 }
 
 void VoiceNode::updateModOscillator1Gain(float gain) {
-    m_mod_oscillator_gain1.setGain(gain);
+    mod_oscillator_gain_1_.setGain(gain);
 }
 
 void VoiceNode::updateModOscillator2Gain(float gain) {
-    m_mod_oscillator_gain2.setGain(gain);
+    mod_oscillator_gain_2_.setGain(gain);
 }
 
 void VoiceNode::updateOscillator1Frequency(float frequency) {
-    m_oscillator1.setFrequency(frequency);
+    oscillator_1_.setFrequency(frequency);
 }
 
 void VoiceNode::updateOscillator2Frequency(float frequency) {
-    m_oscillator2.setFrequency(frequency);
+    oscillator_2_.setFrequency(frequency);
 }
 
 void VoiceNode::updateOscillator1Gain(float gain) {
-    m_oscillator_gain1.setGain(gain);
+    oscillator_gain_1_.setGain(gain);
 }
 
 void VoiceNode::updateOscillator2Gain(float gain) {
-    m_oscillator_gain2.setGain(gain);
+    oscillator_gain_2_.setGain(gain);
 }
 
 
 void VoiceNode::processInternal(const unsigned frames) {
-    ensureBufferSize(frames);
 
-    m_mixer_node.process(frames, m_last_processing_id);
+    output_.process(frames, last_processing_id_);
+    //mixer_node_.process(frames, last_processing_id_);
 
-    const float* input_buffer = m_mixer_node.buffer();
+    const float* input_buffer = output_.buffer();
 
     for(unsigned int i = 0; i < frames; i++) {
-        m_buffer[i] = input_buffer[i];
+        buffer_[i] = input_buffer[i];
     }
 }
 

@@ -13,24 +13,25 @@ public:
 
     // Load the sprite sheet image
     void setSource(const QString &file_path);
-    const QPixmap& source() const { return m_source; }
+    const QPixmap& source() const { return source_; }
 
     // Setters and getters for orientation and cells
     void setOrientation(Qt::Orientation orientation);
-    Qt::Orientation orientation() const { return m_orientation; }
+    Qt::Orientation orientation() const { return orientation_; }
 
     void setCells(int cells);
-    int cells() const { return m_cells; }
+    int cells() const { return cells_; }
 
     // Get the list of cropped images
     const QVector<QPixmap>& croppedImages();
 
 private:
-    QPixmap m_source;
-    Qt::Orientation m_orientation;
-    int m_cells;
-    QVector<QPixmap> m_croppedImages;
+    QPixmap source_;
+    Qt::Orientation orientation_;
+    int cells_;
+    QVector<QPixmap> cropped_images_;
 
+private:
     void generateCroppedImages();    
 };
 

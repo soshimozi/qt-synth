@@ -1,41 +1,41 @@
 #include "spritesheet.h"
 
 SpriteSheet::SpriteSheet(QObject *parent)
-    : QObject(parent), m_orientation(Qt::Horizontal), m_cells(1) {}
+    : QObject(parent), orientation_(Qt::Horizontal), cells_(1) {}
 
 
 void SpriteSheet::setSource(const QString &file_path) {
-    m_source = QPixmap(file_path);
+    source_ = QPixmap(file_path);
     generateCroppedImages();
 }
 
 void SpriteSheet::setOrientation(Qt::Orientation orientation) {
-    m_orientation = orientation;
+    orientation_ = orientation;
     generateCroppedImages();
 }
 
 void SpriteSheet::setCells(int cells) {
-    m_cells = cells;
+    cells_ = cells;
     generateCroppedImages();
 }
 
 const QVector<QPixmap>& SpriteSheet::croppedImages() {
-    return m_croppedImages;
+    return cropped_images_;
 }
 
 void SpriteSheet::generateCroppedImages() {
-    m_croppedImages.clear();
+    cropped_images_.clear();
 
-    if(m_cells <= 0 || m_source.isNull()) return;
+    if(cells_ <= 0 || source_.isNull()) return;
 
-    int spriteWidth = m_source.width() / (m_orientation == Qt::Horizontal ? m_cells : 1);
-    int spriteHeight = m_source.height() / (m_orientation == Qt::Vertical ? m_cells : 1);;
+    int spriteWidth = source_.width() / (orientation_ == Qt::Horizontal ? cells_ : 1);
+    int spriteHeight = source_.height() / (orientation_ == Qt::Vertical ? cells_ : 1);;
 
-    for(int i = 0; i < m_cells; ++i) {
-        int x = (m_orientation == Qt::Horizontal) ? i * spriteWidth : 0;
-        int y = (m_orientation == Qt::Vertical) ? i * spriteHeight : 0;
+    for(int i = 0; i < cells_; ++i) {
+        int x = (orientation_ == Qt::Horizontal) ? i * spriteWidth : 0;
+        int y = (orientation_ == Qt::Vertical) ? i * spriteHeight : 0;
 
-        QPixmap croppedImage = m_source.copy(x, y, spriteWidth, spriteHeight);
-        m_croppedImages.append(croppedImage);
+        QPixmap croppedImage = source_.copy(x, y, spriteWidth, spriteHeight);
+        cropped_images_.append(croppedImage);
     }
 }

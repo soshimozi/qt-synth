@@ -21,7 +21,6 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 set(PROJECT_SOURCES
     src/audionode.cpp src/audionode.h
     src/automationnode.cpp src/automationnode.h
-
     src/definitions.h
     src/gainnode.cpp src/gainnode.h
     src/helpers.cpp src/helpers.h
@@ -34,10 +33,11 @@ set(PROJECT_SOURCES
     src/whitekey.h src/blackkey.h
     src/spritesheet.cpp src/spritesheet.h
     src/tooltip.cpp src/tooltip.h
-    src/envelopenode.h src/envelopenode.cpp
     src/audioplayer.cpp src/audioplayer.h
     src/voicenode.h src/voicenode.cpp
+    src/adsrnode.h src/adsrnode.cpp
 
+    src/audiocontext.h
 )
 
 set(PROJECT_RESOURCES
@@ -49,7 +49,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${PROJECT_RESOURCES}
-        src/adsrenvelope.h src/adsrenvelope.cpp
+        src/muladdnode.h src/muladdnode.cpp
+        src/automatedaudionode.h src/automatedaudionode.cpp
+
+
     )
 
 # Define target properties for Android with Qt 6 as:

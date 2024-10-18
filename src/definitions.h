@@ -10,3 +10,4 @@
 
 
 constexpr auto SAMPLE_RATE = 44100;
+constexpr auto FRAMES = 512;

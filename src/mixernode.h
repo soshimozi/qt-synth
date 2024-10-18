@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <mutex>
 #include <vector>
 
 #include "audionode.h"
@@ -6,12 +7,18 @@
 class MixerNode final : public AudioNode
 {
 public:
-	explicit MixerNode(unsigned int num_inputs);
+    struct InputNodeInfo {
+        AudioNode * node;
+        //float gain;
+    };
 
-	void setGain(unsigned int input_index, float gain);
+public:
+    explicit MixerNode(AudioContext& context) : AudioNode(context) {}
 
-	void addMix(AudioNode* node, unsigned int index);
-	AudioNode* removeInput(unsigned int index);
+    void addInput(AudioNode* node, float gain);
+    void removeInput(AudioNode* node);
+
+    //void setInputGain(AudioNode* node, float gain);
 
 protected:
 	void processInternal(unsigned frames) override;
@@ -21,6 +28,7 @@ public:
 	AudioNode* removeAutomation(unsigned port) override { return nullptr;  }
 
 private:
-	std::vector<AudioNode*> inputs_;
-	std::vector<float> gains_;
+private:
+    std::vector<InputNodeInfo> inputs_;
+    std::mutex input_mutex_;
 };

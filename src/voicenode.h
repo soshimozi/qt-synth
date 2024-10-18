@@ -1,9 +1,11 @@
 #ifndef VOICENODE_H
 #define VOICENODE_H
 
+#include "adsrnode.h"
+//#include "arithmeticnode.h"
 #include "audionode.h"
+//#include "buffernode.h"
 #include "gainnode.h"
-#include "lp12filternode.h"
 #include "mixernode.h"
 #include "oscillatornode.h"
 
@@ -37,12 +39,17 @@ public:
         float oscillator_1_detune = 0.0f;
         float oscillator_2_detune = 0.0f;
 
+        float volume_envelope_a_ = 0.001;
+        float volume_envelope_d_ = 0.001;
+        float volume_envelope_s_ = 0.001;
+        float volume_envelope_r_ = 0.001;
+
         // ... Add more parameters as needed
     };
 
     class Builder {
     public:
-        Builder() = default;
+        Builder(AudioContext& context) : context_(context) {}
 
         // Setter methods
         Builder& setModWaveform(wave_shape value) {
@@ -105,21 +112,42 @@ public:
             return *this;
         }
 
+        Builder& setVolumeEnvelopeA(float value) {
+            params_.volume_envelope_a_ = value;
+            return *this;
+        }
+
+        Builder& setVolumeEnvelopeD(float value) {
+            params_.volume_envelope_d_ = value;
+            return *this;
+        }
+
+        Builder& setVolumeEnvelopeS(float value) {
+            params_.volume_envelope_s_ = value;
+            return *this;
+        }
+
+        Builder& setVolumeEnvelopeR(float value) {
+            params_.volume_envelope_r_ = value;
+            return *this;
+        }
+
         // Build method
         VoiceNode build() {
-            return VoiceNode(params_);
+            return VoiceNode(context_, params_);
         }
 
         VoiceParameters parameters() const { return params_; }
 
     private:
         VoiceParameters params_;
+        AudioContext& context_;
     };
 
-    explicit VoiceNode();
+    explicit VoiceNode(AudioContext& context);
 
 private:
-    explicit VoiceNode(const VoiceParameters& params);
+    explicit VoiceNode(AudioContext& context, const VoiceParameters& params);
 
 public:
     void setParameters(const VoiceParameters& parameters);
@@ -142,7 +170,15 @@ public:
     void updateOscillator1Detune(float detune);
     void updateOscillator2Detune(float detune);
 
-    bool note_on() const { return note_on_; }
+    void updateVolumeEnvelopeA(float attack);
+    void updateVolumeEnvelopeD(float decay);
+    void updateVolumeEnvelopeS(float sustain);
+    void updateVolumeEnvelopeR(float release);
+
+    //bool note_on() const { return note_on_; }
+    void noteOn() { volume_envelope_.setGate(1.0); }
+    void noteOff() { volume_envelope_.setGate(0.0); }
+
 protected:
     void addAutomation(AudioNode* node, unsigned port) override {}
     AudioNode* removeAutomation(unsigned port) override { return nullptr;}
@@ -151,44 +187,31 @@ protected:
 private:
 
     void buildDeviceChain();
-    // VoiceNode(wave_shape mod_waveform,
-    //           wave_shape oscillator_1_waveform,
-    //           wave_shape oscillator_2_waveform,
-    //           float mod_frequency,
-    //           float oscillator_1_mod_gain,
-    //           float oscillator_2_mod_gain,
-    //           float oscillator_1_frequency,
-    //           float oscillator_2_frequency,
-    //           float oscillator_1_gain,
-    //           float oscillator_2_gain,
-    //           float oscillator_1_detune,
-    //           float oscillator_2_detune
-    //           );
 
-
-    // void buildEffectChain(wave_shape mod_waveform,
-    //                       wave_shape oscillator_1_waveform,
-    //                       wave_shape oscillator_2_waveform,
-    //                       float mod_frequency,
-    //                       float oscillator_1_mod_gain,
-    //                       float oscillator_2_mod_gain,
-    //                       float oscillator_1_frequency,
-    //                       float oscillator_2_frequency,
-    //                       float oscillator_1_gain,
-    //                       float oscillator_2_gain,
-    //                       float oscillator_1_detune,
-    //                       float oscillator_2_detune);
 private:
-    OscillatorNode m_oscillator1;
-    OscillatorNode m_oscillator2;
-    OscillatorNode m_mod_oscillator;
-    GainNode m_oscillator_gain1;
-    GainNode m_oscillator_gain2;
-    GainNode m_mod_oscillator_gain1;
-    GainNode m_mod_oscillator_gain2;
-    MixerNode m_mixer_node;
+    OscillatorNode oscillator_1_;
+    OscillatorNode oscillator_2_;
+    OscillatorNode mod_oscillator_;
 
-    bool note_on_ = false;
+    GainNode oscillator_gain_1_;
+    GainNode oscillator_gain_2_;
+
+    GainNode mod_oscillator_gain_1_;
+    GainNode mod_oscillator_gain_2_;
+
+    GainNode oscillator_1_volume_envelope_gain_;
+    GainNode oscillator_2_volume_envelope_gain_;
+
+    ADSRNode filter_envelope_;
+    ADSRNode volume_envelope_;
+
+    //ArithmeticNode mod_oscillator_mod_multiplier; //(context_, ArithmeticNode::Operation::Multiply, 1);
+    //ArithmeticNode mod_oscillator_mod_adder; //(context_, ArithmeticNode::Operation::Add, 1.25);
+
+
+    MixerNode output_;
+
+    //bool note_on_ = false;
 };
 
 #endif // VOICENODE_H

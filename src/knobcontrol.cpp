@@ -4,82 +4,82 @@
 #include <QtMath>
 
 KnobControl::KnobControl(QWidget *parent)
-    : QWidget{parent}, m_isDragging(false), m_minimum(0.0), m_maximum(100.0),
-      m_value(0.0), m_spriteSheet(nullptr)
+    : QWidget{parent}, dragging_(false), minimum_value_(0.0), maximum_value_(100.0),
+      current_value_(0.0), _spritesheet(nullptr)
 {
     setMinimumSize(50, 50);
     setMouseTracking(true);  // Enable mouse tracking to detect hover
 }
 
 void KnobControl::setMinimum(double minimum) {
-    m_minimum = minimum;
+    minimum_value_ = minimum;
     updateImage();
 }
 
 void KnobControl::setMaximum(double maximum) {
-    m_maximum = maximum;
+    maximum_value_ = maximum;
     updateImage();
 }
 
 void KnobControl::setValue(double value) {
-    double old_value = m_value;
-    m_value = value;
+    double old_value = current_value_;
+    current_value_ = value;
     updateImage();
 
-    emit knobChanged(old_value, m_value);
+    emit knobChanged(old_value, current_value_);
 }
 
 void KnobControl::setSpriteSheet(std::shared_ptr<SpriteSheet> spriteSheet) {
-    m_spriteSheet = spriteSheet;
+    _spritesheet = spriteSheet;
     updateImage();
 }
 
 void KnobControl::paintEvent(QPaintEvent *event) {
     Q_UNUSED(event);
 
-    if(!m_spriteSheet || m_spriteSheet->croppedImages().isEmpty()) return;
+    if(!_spritesheet || _spritesheet->croppedImages().isEmpty()) return;
 
     QPainter painter(this);
 
     // Calculate the mapped value and find the corresponding frame
-    double mappedValue = (m_value - m_minimum) / (m_maximum - m_minimum);
-    int spriteCount = m_spriteSheet->croppedImages().size();
+    double mappedValue = (current_value_ - minimum_value_) / (maximum_value_ - minimum_value_);
+    int spriteCount = _spritesheet->croppedImages().size();
     int index = qBound(0, qFloor(mappedValue * spriteCount), spriteCount - 1);
 
     // Draw the sprite image
-    if(index >= 0 && index < m_spriteSheet->croppedImages().size()) {
-        QPixmap sprite = m_spriteSheet->croppedImages()[index];
+    if(index >= 0 && index < _spritesheet->croppedImages().size()) {
+        QPixmap sprite = _spritesheet->croppedImages()[index];
         painter.drawPixmap(rect(), sprite);
     }
 }
 
 void KnobControl::mousePressEvent(QMouseEvent *event) {
-    m_isDragging = true;
-    m_lastMousePosition = event->pos();
+    dragging_ = true;
+    last_mouse_position_ = event->pos();
     event->accept();
 }
 
 
 void KnobControl::mouseMoveEvent(QMouseEvent *event) {
-    if(!m_isDragging) return;
+    if(!dragging_) return;
 
     // Calculate knob value based on mouse movement
-    QPoint delta = event->pos() - m_lastMousePosition;
+    QPoint delta = event->pos() - last_mouse_position_;
     double offset = delta.x() - delta.y();  // simplified rotation logic
 
-    double range = m_maximum - m_minimum;
+    double range = maximum_value_ - minimum_value_;
     double step  = range * offset / 100.0;
 
-    double newValue = m_value + step;
-    newValue = qBound(m_minimum, newValue, m_maximum);
+    double newValue = current_value_ + step;
+    newValue = qBound(minimum_value_, newValue, maximum_value_);
     setValue(newValue);
 
-    m_lastMousePosition = event->pos();
+    last_mouse_position_ = event->pos();
     event->accept();
 }
 
 void KnobControl::mouseReleaseEvent(QMouseEvent *event) {
-    m_isDragging = false;
+    dragging_ = false;
     event->accept();
 }
 
@@ -91,13 +91,13 @@ void KnobControl::wheelEvent(QWheelEvent *event) {
 
     // Handle mouse wheel movement
     int delta = event->angleDelta().y();  // Vertical wheel movement
-    double range = m_maximum - m_minimum;
+    double range = maximum_value_ - minimum_value_;
 
     double step = range * 0.01;  // Define how much each wheel step changes the value
     if (delta > 0) {
-        setValue(qBound(m_minimum, m_value + step, m_maximum));  // Scroll up, increase value
+        setValue(qBound(minimum_value_, current_value_ + step, maximum_value_));  // Scroll up, increase value
     } else {
-        setValue(qBound(m_minimum, m_value - step, m_maximum));  // Scroll down, decrease value
+        setValue(qBound(minimum_value_, current_value_ - step, maximum_value_));  // Scroll down, decrease value
     }
 
     event->accept();
