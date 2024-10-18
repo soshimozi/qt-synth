@@ -33,12 +33,12 @@ int showMainWindow(int argc, char *argv[]) {
 int showConsole(int argc, char* argv[]) {
     AudioContext context(SAMPLE_RATE, FRAMES);
 
-    AudioPlayer m_audioPlayer;
+    AudioPlayer m_audioPlayer(nullptr, SAMPLE_RATE, FRAMES);
 
-    GainNode modOscillatorGain1(context, .5);
-    GainNode modOscillatorGain2(context, .1);
+    GainNode modOscillatorGain1(context, .7);
+    GainNode modOscillatorGain2(context, .3);
 
-    GainNode filterModGain(context, .2);
+    GainNode filterModGain(context, .9);
     OscillatorNode oscillator1(context, wave_shape::sawtooth, 165);
     OscillatorNode oscillator2(context, wave_shape::sawtooth, 110);
 
@@ -47,36 +47,46 @@ int showConsole(int argc, char* argv[]) {
     MulAddNode filterMA(context, 900, 1000);
 
     LP12FilterNode filter(context, 440);
+    LP12FilterNode filter2(context, 440);
     GainNode gainVolume(context, .5);
     MixerNode filter_mixer(context);
 
-    GainNode oscillator1Gain(context, .8);
-    GainNode oscillator2Gain(context, 0);
+    GainNode oscillator1Gain(context, .4);
+    GainNode oscillator2Gain(context, .4);
+
+    GainNode envelopeVolume(context, .1);
+
+    ADSRNode adsr(context, .2, .1, .8, .1);
 
     lfo.connect(&lfoMA);
     lfoMA.connect(&modOscillatorGain1);
-
-    modOscillatorGain1.automate(&oscillator1, OscillatorNode::Parameters::Frequency);
-    modOscillatorGain2.automate(&oscillator2, OscillatorNode::Parameters::Frequency);
-
+    lfoMA.connect(&modOscillatorGain2);
     lfo.connect(&filterMA);
 
     filterMA.connect(&filterModGain);
-    filterModGain.automate(&filter, LP12FilterNode::Parameters::Cutoff);
-
-    //filter_mixer.addInput(&oscillator1, 1);
-    //filter_mixer.addInput(&oscillator2, 1);
 
     oscillator1.connect(&oscillator1Gain);
     oscillator2.connect(&oscillator2Gain);
 
     filter_mixer.addInput(&oscillator1Gain, 1);
     filter_mixer.addInput(&oscillator2Gain, 1);
-
     filter_mixer.connect(&filter);
+    filter.connect(&filter2);
+    filter2.connect(&gainVolume);
 
-    filter.connect(&gainVolume);
+    modOscillatorGain1.automate(&oscillator1, OscillatorNode::Parameters::Frequency);
+    modOscillatorGain2.automate(&oscillator2, OscillatorNode::Parameters::Frequency);
 
+    filterModGain.automate(&filter, LP12FilterNode::Parameters::Cutoff);
+    filterModGain.automate(&filter2, LP12FilterNode::Parameters::Cutoff);
+
+    adsr.automate(&gainVolume, GainNode::Parameters::Gain);
+
+    adsr.setGate(true);
+
+    //gainVolume.gain()->linearRampValueAtTime(1, 1.2);
+
+    //adsr.automate(&gainVolume, GainNode::Parameters::Gain);
     // auto voiceNode = VoiceNode::Builder(context)
     //                     .setModFrequency(5)
     //                     .setOscillator1Frequency(440)
@@ -91,7 +101,7 @@ int showConsole(int argc, char* argv[]) {
     static int last_processing_id = 0;
 
     // Set the callback for the audio player
-    m_audioPlayer.setCallback([&gainVolume, &context](const void* user_data, float* output, unsigned long frames_per_buffer) {
+    m_audioPlayer.setCallback([&gainVolume, &context, &adsr](const void* user_data, float* output, unsigned long frames_per_buffer) {
 
         gainVolume.process(frames_per_buffer, last_processing_id++ /*context.lastBatch()*/);  // Process the signal chain
 
@@ -101,6 +111,18 @@ int showConsole(int argc, char* argv[]) {
         for (unsigned long i = 0; i < frames_per_buffer; ++i) {
             output[i * 2] = buffer[i];      // Left channel
             output[i * 2 + 1] = buffer[i];  // Right channel (duplicate for stereo)
+        }
+
+        if(last_processing_id > 100) {
+            adsr.setGate(false);
+        }
+
+        if(last_processing_id > 300) {
+            adsr.setGate(true);
+        }
+
+        if(last_processing_id > 350) {
+            adsr.setGate(false);
         }
 
         //context.updateBatch();

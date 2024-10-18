@@ -43,8 +43,10 @@ void GainNode::processInternal(const unsigned frames) {
     memcpy(gain_buffer.get(), gain_automation_.buffer(), frames * sizeof(float));
 
 	for(unsigned int i = 0; i < frames; i++) {
-        buffer_[i] = input_buffer[i] * (gain_ + gain_buffer[i]);
-	}
+    //    buffer_[i] = input_buffer[i] * (gain_ + gain_buffer[i]);
+
+        buffer_[i] = input_buffer[i] * gain_buffer[i];
+    }
 }
 
 

@@ -15,6 +15,8 @@ public:
 	void processInternal(unsigned frames) override;
     void setGain(float gain) { gain_automation_.setBaseValue(gain); gain_ = gain; }
 
+    AutomationNode* gain() { return &gain_automation_; }
+
 protected:
     void addAutomation(AudioNode* node, unsigned port) override;
     AudioNode* removeAutomation(unsigned port) override;
