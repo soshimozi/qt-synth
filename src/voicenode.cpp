@@ -37,7 +37,7 @@ void VoiceNode::setParameters(const VoiceParameters& parameters) {
     updateOscillator2Frequency(parameters.oscillator_2_frequency);
 
     updateOscillator1Gain(parameters.oscillator_1_gain);
-    updateOscillator2Gain(parameters.oscillator_1_gain);
+    updateOscillator2Gain(parameters.oscillator_2_gain);
 
     updateOscillator1Detune(parameters.oscillator_1_detune);
     updateOscillator2Detune(parameters.oscillator_2_detune);
@@ -54,8 +54,8 @@ void VoiceNode::buildDeviceChain() {
     mod_oscillator_.connect(&mod_oscillator_gain_1_);
     mod_oscillator_.connect(&mod_oscillator_gain_2_);
 
-    mod_oscillator_.automate(&oscillator_gain_1_, GainNode::Parameters::Gain);
-    mod_oscillator_.automate(&oscillator_gain_2_, GainNode::Parameters::Gain);
+    mod_oscillator_gain_1_.automate(&oscillator_gain_1_, GainNode::Parameters::Gain);
+    mod_oscillator_gain_2_.automate(&oscillator_gain_2_, GainNode::Parameters::Gain);
 
     oscillator_1_.connect(&oscillator_gain_1_);
     oscillator_2_.connect(&oscillator_gain_2_);
@@ -63,13 +63,16 @@ void VoiceNode::buildDeviceChain() {
     oscillator_gain_1_.connect(&oscillator_1_volume_envelope_gain_);
     oscillator_gain_2_.connect(&oscillator_2_volume_envelope_gain_);
 
+    oscillator_1_volume_envelope_gain_.setGain(0.0f);
+    oscillator_2_volume_envelope_gain_.setGain(0.0f);
+
     volume_envelope_.automate(&oscillator_1_volume_envelope_gain_, GainNode::Parameters::Gain);
     volume_envelope_.automate(&oscillator_2_volume_envelope_gain_, GainNode::Parameters::Gain);
 
     volume_envelope_.setGate(false);
 
-    output_.addInput(&oscillator_1_volume_envelope_gain_, 1.0);
-    output_.addInput(&oscillator_2_volume_envelope_gain_, 1.0);
+    output_.addInput(&oscillator_1_volume_envelope_gain_, 1.0f);
+    output_.addInput(&oscillator_2_volume_envelope_gain_, 1.0f);
 }
 
 void VoiceNode::updateVolumeEnvelopeA(float attack) {

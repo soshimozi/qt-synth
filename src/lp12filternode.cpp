@@ -116,14 +116,9 @@ void LP12FilterNode::processInternal(unsigned frames) {
     detune_automation_.process(frames, last_processing_id_);
 
 	// Get the cutoff and resonance buffers (these could be dynamic inputs or static values)
-	const auto cutoff_buffer = std::make_unique<float[]>(frames);
-    memcpy(cutoff_buffer.get(), cutoff_automation_.buffer(), frames * sizeof(float));
-
-	const auto resonance_buffer = std::make_unique<float[]>(frames);
-    memcpy(resonance_buffer.get(), resonance_automation_.buffer(), frames * sizeof(float));
-
-    const auto detune_buffer = std::make_unique<float []>(frames);
-    memcpy(detune_buffer.get(), detune_automation_.buffer(), frames * sizeof(float));
+    const float* cutoff_buffer = cutoff_automation_.buffer();
+    const float* resonance_buffer = resonance_automation_.buffer();
+    const float* detune_buffer = detune_automation_.buffer();
 
 	for(unsigned int i = 0; i < frames; ++i) {
 
@@ -132,16 +127,16 @@ void LP12FilterNode::processInternal(unsigned frames) {
         const float current_detune = detune_automation_.baseValue() + detune_buffer[i];
 
 		// Recalculate coefficients for the current frame if cutoff or resonance has changed
-		if(std::fabs( previous_cutoff_ - current_cutoff) <= std::numeric_limits<float>::epsilon() || 
-            std::fabs(previous_resonance_ - current_resonance) <= std::numeric_limits<float>::epsilon() ||
-            std::fabs(previous_detune_ - current_detune) <= std::numeric_limits<float>::epsilon()) {
+        if(std::fabs(previous_cutoff_ - current_cutoff) > std::numeric_limits<float>::epsilon() ||
+            std::fabs(previous_resonance_ - current_resonance) > std::numeric_limits<float>::epsilon() ||
+            std::fabs(previous_detune_ - current_detune) > std::numeric_limits<float>::epsilon()) {
 
             calculateCoefficients(current_cutoff, current_resonance, current_detune);
 
-			previous_cutoff_ = current_cutoff;
-			previous_resonance_ = current_resonance;
+            previous_cutoff_ = current_cutoff;
+            previous_resonance_ = current_resonance;
             previous_detune_ = current_detune;
-		}
+        }
 
 		// process the sample
         const float sample = input_->buffer()[i];

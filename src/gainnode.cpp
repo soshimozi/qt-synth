@@ -28,25 +28,21 @@ AudioNode* GainNode::removeAutomation(unsigned port) {
 }
 
 void GainNode::processInternal(const unsigned frames) {
-
-	if(input_ == nullptr) {
-		memset(buffer_.get(), 0, frames * sizeof(float));
-		return;
-	}
+    if (input_ == nullptr) {
+        memset(buffer_.get(), 0, frames * sizeof(float));
+        return;
+    }
 
     gain_automation_.process(frames, last_processing_id_);
     input_->process(frames, last_processing_id_);
 
-	const float* input_buffer = input_->buffer();
+    const float* input_buffer = input_->buffer();
+    const float* gain_buffer = gain_automation_.buffer();
+    const float base_gain = gain_automation_.baseValue();
 
-    const auto gain_buffer = std::make_unique<float []>(frames);
-    memcpy(gain_buffer.get(), gain_automation_.buffer(), frames * sizeof(float));
-
-	for(unsigned int i = 0; i < frames; i++) {
-    //    buffer_[i] = input_buffer[i] * (gain_ + gain_buffer[i]);
-
-        buffer_[i] = input_buffer[i] * gain_buffer[i];
+    for (unsigned int i = 0; i < frames; i++) {
+        const float gain = std::max(0.0f, base_gain + gain_buffer[i]);
+        buffer_[i] = input_buffer[i] * gain;
     }
 }
-
 

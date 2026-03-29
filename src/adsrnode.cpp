@@ -34,8 +34,7 @@ void ADSRNode::processInternal(unsigned frames) {
 
     gate_automation_.process(frames, last_processing_id_);
 
-    const auto gate_buffer = std::make_unique<float[]>(frames);
-    memcpy(gate_buffer.get(), gate_automation_.buffer(), frames * sizeof(float));
+    const auto gate_buffer = gate_automation_.buffer();
 
     for(unsigned i = 0; i < frames; ++i) {
         auto gate = (gate_buffer[i] != 0);
@@ -79,7 +78,7 @@ void ADSRNode::processInternal(unsigned frames) {
 
         case State::Release:
             envelope_level_ -= sustain_ / (release_ * sampleRate);
-            if(envelope_level_ <= 0.0f) {
+            if(envelope_level_ <= 0.0001f) {
                 envelope_level_ = 0.0f;
                 state_ = State::Idle;
             }

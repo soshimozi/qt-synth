@@ -148,18 +148,29 @@ QVBoxLayout *MainWindow::createModLayout() {
     QVBoxLayout* frequencyKnobLayout;
     auto modFrequencyKnob = createKnob(&frequencyKnobLayout, 0, 10, mod_frequency_, tr("FREQ"), 1);
     connectKnobToMember(modFrequencyKnob, mod_frequency_, this, std::bind(&MainWindow::updateVoices, this));
-    vbModGroup->addLayout(frequencyKnobLayout);
+
+    QWidget* frequencyKnobWidget = new QWidget;
+    frequencyKnobWidget->setLayout(frequencyKnobLayout);
+    vbModGroup->addWidget(frequencyKnobWidget);
 
     QVBoxLayout *modMixLayout;
     auto modMixKnob = createKnob(&modMixLayout, 0, 100, osc_1_mod_mix_, tr("OSC1 TREMOLO"));
     connectKnobToMember(modMixKnob, osc_1_mod_mix_, this, std::bind(&MainWindow::updateVoices, this));
-    vbModGroup->addLayout(modMixLayout);
+
+    QWidget* modMixWidget = new QWidget;
+    modMixWidget->setLayout(modMixLayout);
+
+    vbModGroup->addWidget(modMixWidget);
 
 
     QVBoxLayout *modMix2Layout;
     auto modMix2Knob = createKnob(&modMix2Layout, 0, 100, osc_2_mod_mix_, tr("OSC2 TREMOLO"));
     connectKnobToMember(modMix2Knob, osc_2_mod_mix_, this, std::bind(&MainWindow::updateVoices, this));
-    vbModGroup->addLayout(modMix2Layout);
+
+    QWidget* modMix2Widget = new QWidget;
+    modMix2Widget->setLayout(modMix2Layout);
+
+    vbModGroup->addWidget(modMix2Widget);
 
     return vbModGroup;
 }
@@ -683,12 +694,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     (*voice)->setParameters(VoiceNode::Builder(audio_context_)
                               .setModFrequency(5)
-                              .setOscillator1Frequency(440)
-                              .setOscillator2Frequency(440 * std::pow(2, -1))
-                              .setOscillator1Gain(.9)
-                              .setOscillator2Gain(.6)
-                              .setOscillator1ModGain(.1)
-                              .setOscillator2ModGain(.1)
+                              .setOscillator1Frequency(130.81)
+                              .setOscillator2Frequency(196)
+                              .setOscillator1Gain(1)
+                              .setOscillator2Gain(.2)
+                              .setOscillator1ModGain(.2)
+                              .setOscillator2ModGain(.2)
                               .setVolumeEnvelopeA(1.1)
                               .setVolumeEnvelopeD(.1)
                               .setVolumeEnvelopeS(1.0)
