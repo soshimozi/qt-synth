@@ -29,25 +29,22 @@ void OscillatorNode::processInternal(const unsigned int frames) {
     frequency_automation_.process(frames, last_processing_id_);
     pulse_width_automation_.process(frames, last_processing_id_);
 
-    const auto frequency_buffer = std::make_unique<float[]>(frames);
-    memcpy(frequency_buffer.get(), frequency_automation_.buffer(), frames * sizeof(float));
+    const float* frequency_buffer = frequency_automation_.buffer();
+    const float* pulse_width_buffer = pulse_width_automation_.buffer();
 
-    const auto pulse_width_buffer = std::make_unique<float[]>(frames);
-    memcpy(pulse_width_buffer.get(), pulse_width_automation_.buffer(), frames * sizeof(float));
+    const float sample_rate = context_.sampleRate();
+    const float detune_factor = std::pow(2.0f, detune_cents_ / 1200.0f);
 
     // Generate waveform samples
     for (unsigned int i = 0; i < frames; ++i) {
-        const float current_freq = (frequency_automation_.baseValue() + frequency_buffer[i]) * std::pow(2.0f, detune_cents_ / 1200.0f);
+        const float current_freq = (frequency_automation_.baseValue() + frequency_buffer[i]) * detune_factor;
         const float current_pulse_width = pulse_width_buffer[i];
 
         buffer_[i] = generateSample(phase_, current_pulse_width);
 
         // Update phase
-        const float phase_increment = TWO_PI * current_freq / context_.sampleRate();
-        phase_ += phase_increment;
-        if (phase_ >= TWO_PI) {
-            phase_ -= TWO_PI;
-        }
+        phase_ += TWO_PI * current_freq / sample_rate;
+        if (phase_ >= TWO_PI) phase_ -= TWO_PI;
     }
 }
 

@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(PORTAUDIO_BASE_DIR "d:/portaudio")
+set(PORTAUDIO_BASE_DIR "d:/MusicProgramming/portaudio")
 
 if(NOT PORTAUDIO_BASE_DIR)
    message(FATAL_ERROR "Please provide the base directory for PortAudio using -DPORTAUDIO_BASE_DIR=<path>")
@@ -51,6 +51,11 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_RESOURCES}
         src/muladdnode.h src/muladdnode.cpp
         src/automatedaudionode.h src/automatedaudionode.cpp
+        src/mainwindow_cable.h src/mainwindow_cable.cpp
+        src/patchpanelwidget.h src/patchpanelwidget.cpp
+
+
+
 
 
     )

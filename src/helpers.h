@@ -2,7 +2,7 @@
 #define HELPERS_H
 
 
-#include <qobject.h>
+#include <QObject.h>
 
 QString formatNumberPrefix(double number);
 

@@ -3,13 +3,13 @@
 #include "gainnode.h"
 #include "lp12filternode.h"
 #include "mainwindow.h"
+#include "mainwindow_cable.h"
 #include "muladdnode.h"
-#include "oscillatornode.h"
-//#include <QApplication>
 #include <iostream>
-#include <limits>
 #include <ostream>
-#include <qapplication.h>
+#include <QApplication.h>
+
+#include "oscillatornode.h"
 
 
 int showMainWindow(int argc, char *argv[]) {
@@ -144,13 +144,19 @@ int showConsole(int argc, char* argv[]) {
 
 }
 
-//#define USE_WINDOW
+#define USE_WINDOW
 
 int main(int argc, char *argv[])
 {
 
 #ifdef USE_WINDOW
-    return showMainWindow(argc, argv);
+    //return showMainWindow(argc, argv);
+    QApplication a(argc, argv);
+
+    MainWindow_Cable window;
+    window.setFixedSize(1024, 768);
+    window.show();
+    return a.exec();
 #else
     return showConsole(argc, argv);
 #endif
